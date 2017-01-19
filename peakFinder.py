@@ -2,7 +2,7 @@
 # Name:        peakFinder.py
 # Purpose:
 #
-# Author:      Jeremiah alkjdsnkvc
+# Author:      Jeremiah test
 #
 # Created:     23/06/2016
 # Copyright:   (c) Jeremiah 2016
