@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Name:        module2
+# Name:        peakFinder.py
 # Purpose:
 #
 # Author:      Jeremiah
