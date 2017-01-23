@@ -11,7 +11,7 @@
 #import numpy as np
 import matplotlib.pyplot as mpl
 import sys
-from numpy import NaN, Inf, arange, isscalar, asarray, array
+from numpy import NaN, Inf, isscalar, asarray, array
 
 def peakdet(v, delta, x = None):
 
@@ -19,7 +19,7 @@ def peakdet(v, delta, x = None):
     mintab = []
 
     if x is None:
-        x = arange(len(v))
+        x = array(range(len(v)))
 
     v = asarray(v)
 
@@ -62,10 +62,11 @@ def peakdet(v, delta, x = None):
     return array(maxtab), array(mintab)
 
 if __name__=="__main__":
-    from matplotlib.pyplot import plot, scatter, show
-    series = [0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0]
-    maxtab, mintab = peakdet(series,.3)
-    plot(series)
-    scatter(array(maxtab)[:,0], array(maxtab)[:,1], color='blue')
-    scatter(array(mintab)[:,0], array(mintab)[:,1], color='red')
-    show()
+    print sys.platform
+    # from matplotlib.pyplot import plot, scatter, show
+    # series = [0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0]
+    # maxtab, mintab = peakdet(series,.3)
+    # plot(series)
+    # scatter(array(maxtab)[:,0], array(maxtab)[:,1], color='blue')
+    # scatter(array(mintab)[:,0], array(mintab)[:,1], color='red')
+    # show()
