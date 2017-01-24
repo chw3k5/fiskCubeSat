@@ -12,6 +12,7 @@
 import matplotlib.pyplot as mpl
 import sys
 from numpy import NaN, Inf, isscalar, asarray, array
+from dataGetter import getTableData
 
 
 
@@ -67,8 +68,41 @@ def peakdet(v, delta, x = None):
     return array(maxtab), array(mintab)
 
 if __name__=="__main__":
-    print sys.platform
-    # from matplotlib.pyplot import plot, scatter, show
+    endIndex = 100
+
+
+    from matplotlib import pyplot as plt
+
+
+    testData = getTableData("testData/Am-241.csv")
+    chan = testData['chan'][:endIndex]
+    data = testData['data'][:endIndex]
+    maxtab, mintab = peakdet(v=data, delta=40, x=chan)
+    print "Plotting now..."
+    ledlines = []
+    ledlabels = []
+
+    plt.plot(chan, data, color='darkorchid', ls='-', linewidth='3')
+    ledlines.append(plt.Line2D(range(10), range(10), color='darkorchid', ls='-', linewidth='3'))
+    ledlabels.append('raw data')
+
+
+    plt.plot(maxtab[:,0], maxtab[:,1], color='firebrick', ls='None', linewidth='1', marker='o')
+    ledlines.append(plt.Line2D(range(10), range(10), color='firebrick', ls='None', marker='o'))
+    ledlabels.append('found max')
+
+    plt.plot(mintab[:,0], mintab[:,1], color='dodgerblue', ls='None', linewidth='1', marker='x')
+    ledlines.append(plt.Line2D(range(10), range(10), color='dodgerblue', ls='None', marker='x'))
+    ledlabels.append('found min')
+
+    plt.title('Am-241')
+    plt.xlabel('Channel Number')
+    plt.ylabel("Counts")
+    plt.legend(ledlines,ledlabels, loc=0, numpoints=1, handlelength=5)
+    plt.savefig('Am-241plot.eps')
+
+    plt.show()
+
     # series = [0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0]
     # maxtab, mintab = peakdet(series,.3)
     # plot(series)
