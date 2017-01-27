@@ -175,13 +175,13 @@ void MainWindow::on_detectorsChanged()
         // Retrieve individual details about the device
         char deviceName[cNumberOfCharacters];
         int bytesOut;
-        kr_GetDeviceName(detectorID, deviceName, cNumberOfCharacters, &bytesOut);
+        std::cout << kr_GetDeviceName(detectorID, deviceName, cNumberOfCharacters, &bytesOut);
 
         char manufacturer[cNumberOfCharacters];
-        kr_GetDeviceManufacturer(detectorID, manufacturer, cNumberOfCharacters, &bytesOut);
+        std::cout << kr_GetDeviceManufacturer(detectorID, manufacturer, cNumberOfCharacters, &bytesOut);
 
         char serialNumber[cNumberOfCharacters];
-        kr_GetDeviceSerial(detectorID, serialNumber, cNumberOfCharacters, &bytesOut);
+        std::cout << kr_GetDeviceSerial(detectorID, serialNumber, cNumberOfCharacters, &bytesOut);
 
         int vendorID, productID;
         kr_GetDeviceVendorID(detectorID, &vendorID);

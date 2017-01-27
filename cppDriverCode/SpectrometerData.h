@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../KromekDriver/include/ErrorCodes.h"
+#include "ErrorCodes.h"
 
 // Highest channel number returned by the detector
 #define TOTAL_RESULT_CHANNELS 4096

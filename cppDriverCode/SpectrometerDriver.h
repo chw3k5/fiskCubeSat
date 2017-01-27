@@ -2,7 +2,7 @@
 #define HIDSPECTROMETERDLL_H
 
 /*=================================================================================================================
-*	== Kromek USB driver sdk ==
+*	== Kromek USB driver sdk (software development kit) ==
 *	
 *		This library can be used to interface with the GR1 range of detectors sold by Kromek http://www.kromek.com
 *

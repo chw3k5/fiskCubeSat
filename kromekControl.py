@@ -1,6 +1,9 @@
-import sys
+
+
+import spam
+
+print spam.system("ls -l")
 
 
 
-platform = sys.platform
 
