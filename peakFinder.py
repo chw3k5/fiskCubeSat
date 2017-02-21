@@ -13,6 +13,7 @@ import matplotlib.pyplot as mpl
 import sys
 from numpy import NaN, Inf, isscalar, asarray, array
 from dataGetter import getTableData
+from quickPlots import quickPlotter
 
 
 
@@ -68,44 +69,53 @@ def peakdet(v, delta, x = None):
     return array(maxtab), array(mintab)
 
 if __name__=="__main__":
+    # A few options for this data
     endIndex = 100
+    verbose = True
 
-
-    from matplotlib import pyplot as plt
-
-
-    testData = getTableData("testData/Am-241.csv")
+    # Get the test data
+    testDataFile = "testData/Am-241.csv"
+    if verbose: print "Getting the test data in the file", testDataFile
+    testData = getTableData(testDataFile)
     chan = testData['chan'][:endIndex]
     data = testData['data'][:endIndex]
+
+    # do the peak finding algorithm
+    if verbose: print "Applying the peak finding algorithm..."
     maxtab, mintab = peakdet(v=data, delta=40, x=chan)
-    print "Plotting now..."
-    ledlines = []
-    ledlabels = []
 
-    plt.plot(chan, data, color='darkorchid', ls='-', linewidth='3')
-    ledlines.append(plt.Line2D(range(10), range(10), color='darkorchid', ls='-', linewidth='3'))
-    ledlabels.append('raw data')
+    # plot the results
+    if verbose: print "Getting plot parameters..."
+    plotDict = {}
+    plotDict['verbose'] = verbose
 
+    # These can be a list or a single value
+    plotDict['yData'] = [data, maxtab[:,1], mintab[:,1]]
+    plotDict['xData'] = [chan, maxtab[:,0], mintab[:,0]]
 
-    plt.plot(maxtab[:,0], maxtab[:,1], color='firebrick', ls='None', linewidth='1', marker='o')
-    ledlines.append(plt.Line2D(range(10), range(10), color='firebrick', ls='None', marker='o'))
-    ledlabels.append('found max')
+    plotDict['colors'] = ['darkorchid', 'firebrick', 'dodgerblue']
+    plotDict['legendLabel'] = ['raw data', 'found max', 'found min']
 
-    plt.plot(mintab[:,0], mintab[:,1], color='dodgerblue', ls='None', linewidth='1', marker='x')
-    ledlines.append(plt.Line2D(range(10), range(10), color='dodgerblue', ls='None', marker='x'))
-    ledlabels.append('found min')
+    plotDict['fmt'] = ['None', 'o', 'x']
+    plotDict['markersize'] = [5, 9, 9]
+    plotDict['alpha'] = [1.0, 0.7, 0.7]
+    plotDict['ls'] = ['-', 'None', 'None']
+    plotDict['lineWidth'] = '2'
 
-    plt.title('Am-241')
-    plt.xlabel('Channel Number')
-    plt.ylabel("Counts")
-    plt.legend(ledlines,ledlabels, loc=0, numpoints=1, handlelength=5)
-    plt.savefig('Am-241plot.eps')
+    # These must be a single value
+    plotDict['title'] = 'Am-241'
+    plotDict['xlabel'] = 'Channel Number'
+    plotDict['ylabel'] = 'Counts'
 
-    plt.show()
+    plotDict['legendAutoLabel'] = False
+    plotDict['doLegend'] = True
+    plotDict['legendLoc'] = 0
+    plotDict['legendNumPoints'] = 3
+    plotDict['legendHandleLength'] = 5
 
-    # series = [0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0]
-    # maxtab, mintab = peakdet(series,.3)
-    # plot(series)
-    # scatter(array(maxtab)[:,0], array(maxtab)[:,1], color='blue')
-    # scatter(array(mintab)[:,0], array(mintab)[:,1], color='red')
-    # show()
+    plotDict['savePlot'] = False
+    plotDict['plotFileName'] = 'Am-241plot'
+    plotDict['doEPS'] = True
+    plotDict['doShow'] = True
+
+    quickPlotter(plotDict=plotDict)
