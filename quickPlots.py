@@ -25,7 +25,7 @@ default_plotDict['markersize'] = 5
 default_plotDict['alpha'] = 1.0
 default_plotDict['ls'] = '-'
 default_plotDict['marker'] = None
-default_plotDict['lineWidth'] = '1'
+default_plotDict['lineWidth'] = 1
 
 default_plotDict['ErrorMaker'] = '|'
 default_plotDict['ErrorCapSize'] = 4
@@ -177,3 +177,44 @@ def quickPlotter(plotDict):
 
     if verbose: print '...the quick plotting program has finished.'
     return
+
+
+def rescale(desired, current, target=None):
+    if target is None:
+        target = current
+    maxDesired = max(desired)
+    minDesired = min(desired)
+    maxCurrent = max(current)
+    minCurrent = min(current)
+
+    rangeDesired = float(maxDesired - minDesired)
+    rangeCurrent = float(maxCurrent - minCurrent)
+
+    if rangeCurrent == float(0.0):
+        # This is the case where current is an array of all the same number.
+        # Here we take the middle value of the desired scale and make an array
+        # that is only made up of the middle value.
+        middleDesired = (rangeDesired / 2.0) + minDesired
+        rescaledTarget1 = (target * float(0.0)) + middleDesired
+        return rescaledTarget1
+    else:
+        # 1) set the minimum value of the current to zero
+        rescaledTarget1 = target - minCurrent
+
+        # 2) set the maximum value of the rescaledCurrent1 to 1.0
+        # (max of rescaledCurrent2 is 1.0, min is 0.0)
+        rescaledTarget2 = rescaledTarget1 / rangeCurrent
+
+        # 3 make the range of rescaledCurrent2 the same as the range of the desired
+        # (max of rescaledCurrent3 is rangeDesired, min is zero)
+        rescaledTarget3 = rescaledTarget2 * rangeDesired
+
+        # 4 make the min of rescaledCurrent3 equal to the min of desired
+        # (max of rescaledCurrent3 is rangeDesired + minDesired = maxDesired, min is minDesired)
+        rescaledTarget4 = rescaledTarget3 + minDesired
+
+        return rescaledTarget4
+
+
+
+

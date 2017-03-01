@@ -100,7 +100,7 @@ if __name__=="__main__":
     plotDict['markersize'] = [5, 9, 9]
     plotDict['alpha'] = [1.0, 0.7, 0.7]
     plotDict['ls'] = ['-', 'None', 'None']
-    plotDict['lineWidth'] = '2'
+    plotDict['lineWidth'] = 2
 
     # These must be a single value
     plotDict['title'] = 'Am-241'
