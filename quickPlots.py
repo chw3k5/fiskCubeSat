@@ -18,7 +18,8 @@ colors=['BlueViolet','Brown','CadetBlue','Chartreuse', 'Chocolate','Coral','Corn
 default_plotDict = {}
 
 # These can be a list or a single value
-default_plotDict['colors'] = random.shuffle(colors)
+random.shuffle(colors)
+default_plotDict['colors'] = colors
 
 default_plotDict['fmt'] = 'o'
 default_plotDict['markersize'] = 5

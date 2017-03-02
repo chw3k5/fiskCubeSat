@@ -47,58 +47,25 @@
 #             to identify the peak channel# otherwise,
 #             the maximum y value is used to determine the
 #             peak channel.
-#  _ref_extra 
-#           - keywords for plot
 #  
 # Outputs:
-#  result   - structure
-#    .flag  - if 1, then peaks were found
-#             if -1, then the algorithm failed to 
-#             find peaks
-#    .peaks - list of peak indices (into y), if
-#             flag=1
-#    
-# Examples:
+#  gaussParametersArray   - 'None' or [] or numpy array
+#    if no crossing points (inflection points) are found for the generalized second derivative,
+#       None is returned
 #
-#  Example 1:
-#  # Low resolution
-#  restore, 'f:\GRaND_CZT_Data.idl', /verbose
-#  # data.bgo is a low resolution BGO pulse height spectrum (vector of counts)
-#  # find the peaks and plot peak locations
-#  result=mariscotti(data.bgo[25:500],/plot,/ylog) 
+#    if there are crossing points but none are selected by the algorithim as peaks,
+#       [] the empty list is returned
 #
-# Example 2:
-#  # High resolution
-#  .run ody_fit # reads ODY HPGe data (counts)
-#   result=mariscotti(counts[2000:2250],/plot,/ylog,nsmooth=2,factor=1.)
-#   result=mariscotti(counts[6000:8000],/plot,/ylog,nsmooth=6,factor=1.)
+#    if peaks are identified by the algorithm,
+#       A numpy array is returned of the Gaussian parameters.
+#       The parameters [A, B, and C] = gaussParametersArray[peakNum,:] for the
+#       parameters for a single peak with index equal to peakNum
+#       where A gaussian distribution is defined as G(x)=A * exp((x-B)^2 / (2 * C^2)).
+#       The amplitudes (A) of the peaks can be found as gaussParametersArray[:,0],
+#       the peak index value or mean (B) of the peaks can be found as gaussParametersArray[:,1],
+#       and the standard deviation or sigma (C) of the peaks can be found as gaussParametersArray[:,2],
 #
-# Example 3:
-#  # Simple vector 
-#  counts=make_array(100,/float,value=10.)
-#  counts[25]=100.
-#  counts[50]=1000.
-#  counts[55]=150.
-#  counts[75]=250.
-#  # default paramters:
-#  result=mariscotti(counts,/plot)
-#  # using the pk_gsd method
-#  result=mariscotti(counts,/plot,/pk_gsd)
-#  # using a sharper smooth
-#  result=mariscotti(counts,/plot,/pk_gsd,nsmooth=3)
 #
-# Example 4:
-#  # Use of err keyword
-#  # Retreive tally type 201 spectral data
-#  tally=get_tally_201('f:\mcnpx\xinputs\planetaryoutput\ceres\ceres_a0.o')
-#  # select the 'total' spectrum
-#  i=where(result.user_bin eq 'total')
-#  index1=total(result.ncount[0:i-1],/integer)
-#  index2=total(result.ncount[0:i-1],/integer)+result.ncount[i]-1
-#  # find peaks in a portion of the spectrum
-#  result=mariscotti(result.tally[index1+100:index2-9000],  $
-#         err=result.tally[index1+100:index2-9000]*result.sigma[index1+100:index2-9000], $
-#         /plot, nsmooth=6, factor=5.)
 #
 # Concerns:
 #  The function does not close out plot windows and generates
@@ -132,7 +99,7 @@
 # Experimented with IDL native deriv and derivsig functions.  Failed
 # miserably.  Cleaned up plotting.
 #
-# One March 1 2017, this code was translated form IDL to python 2.7 by
+# On March 1 2017, this code was translated form IDL to python 2.7 by
 # Caleb Wheeler for the Fisk Cube sat program.
 #
 import numpy
@@ -144,8 +111,8 @@ def mariscotti(y, **kwargs):
     keys = kwargs.keys()
     y = numpy.array(y)
 
-    # defults
-    vary=y
+    # defaults
+    vary = y
     f1 = float(1.0)
 
     # kwargs nsmooth
@@ -160,8 +127,8 @@ def mariscotti(y, **kwargs):
         vary=float(err) ** 2.0
 
     # kwargs factor
-    if 'factor' in keys:
-        factor = kwargs['factor']
+    if 'errFactor' in keys:
+        factor = float(kwargs['errFactor'])
         f1=factor
 
     # kwargs pk_gsd
@@ -176,15 +143,14 @@ def mariscotti(y, **kwargs):
     else:
         showPlot = False
 
-      # ????? These are not yet used????
-    if '_ref_extra' in keys:
-        _ref_extra = kwargs['_ref_extra']
+    # kwargs pk_gsd
+    if 'verbose' in keys:
+        verbose = kwargs['verbose']
     else:
-        _ref_extra = None
+        verbose = False
 
-
-    # defined the outputs
-    peaks = []
+    if verbose:
+        print "Starting the Mariscotti peak finding and Gaussian parametrization algorithm."
 
     # rudimentary peak finder based on Mariscotti [1966]
     kernel1 = numpy.array([-1,2,-1])
@@ -216,10 +182,45 @@ def mariscotti(y, **kwargs):
             icross.append(i)
 
     if icross == []:
-        print 'NOTE: No peaks found by Mariscotti algorithm.'
-        return peaks
+        print 'No places where the second derivative crosses zero, so no peaks were found by Mariscotti algorithm.'
+        if showPlot:
+            plotDict = {}
+            plotDict['verbose'] = verbose
+            # plot formatting for index (x) and spectrum values (y) where the gsd (generalized 2nd derivative)
+            # crosses zero (this is marks a boundaries for finding local extrema)
+            x = range(len(y))
+            # plot formatting for the gsd (generalized second derivative)
+            gsd_rescaled = rescale(y, gsd)
+            gsd_zeroLine = rescale(y, gsd, numpy.zeros(len(y)))
+            # These can be a list or a single value
+            plotDict['yData'] = [y, gsd_rescaled, gsd_zeroLine]
+            plotDict['xData'] = [x, x, x]
+            plotDict['colors'] = ['firebrick', 'darkorchid', "black"]
+            plotDict['legendLabel'] = ['The data', '2nd derivative', '2nd deri = 0']
+            plotDict['fmt'] = ['None', 'None', 'None']
+            plotDict['markersize'] = [5, 5, 5]
+            plotDict['alpha'] = [1.0, 1.0, 1.0]
+            plotDict['ls'] = ['-', 'dashed', 'dotted']
+            plotDict['lineWidth'] = [2, 1, 1]
+            # These must be a single value
+            plotDict['title'] = '2nd Derivative Zero Crossing Zero (None Found!)'
+            plotDict['xlabel'] = 'Channel Number'
+            plotDict['legendAutoLabel'] = False
+            plotDict['doLegend'] = True
+            plotDict['legendLoc'] = 0
+            plotDict['legendNumPoints'] = 3
+            plotDict['legendHandleLength'] = 5
+            plotDict['doShow'] = True
+            quickPlotter(plotDict=plotDict)
+        if verbose:
+            print "Mariscotti algorithm completed.\n"
+        return None
+
+    # defined the outputs
+    gaussParameters = []
 
     # find the peaks
+    maxAllowedError = f1 * err
     for i in range(len(icross) - 1):
         icrossStart = icross[i]
         icrossStop = icross[i + 1]
@@ -257,44 +258,105 @@ def mariscotti(y, **kwargs):
                 else:
                     indexOfPeak_y = None
                 if indexOfPeak_y is not None:
-                    maxAllowedError = f1 * err[indexOfPeak_y]
-                    # maxAllowedError = f1 * err[indexOfPeak_y]
-                    if maxAllowedError < gsd[indexOfPeak_y]:
-                        peaks.append((indexOfPeak_y, maxval))
-    peaksArray = numpy.array(peaks)
+                    if maxAllowedError[indexOfPeak_y] < gsd[indexOfPeak_y]:
+                        sigma = float(icrossStop - icrossStart)/float(2.0)
+                        gaussParameters.append((maxval, indexOfPeak_y, sigma))
 
-    if showPlot:
-        plotDict = {}
-        plotDict['verbose'] = True
-        # plot formatting for index (x) and spectrum values (y) where the gsd (generalized 2nd derivative)
-        # crosses zero (this is marks a boundaries for finding local extrema)
-        y_icrossVals = [y[icrossVal] for icrossVal in icross]
-        x = range(len(y))
-        # plot formatting for the gsd (generalized second derivative)
-        gsd_rescaled = rescale(y, gsd)
-        gsd_zeroLine = rescale(y, gsd, numpy.zeros(len(y)))
-        gsd_zeroLine_icrossVals = rescale(y, gsd, numpy.zeros(len(icross)))
-        # These can be a list or a single value
-        plotDict['yData'] = [y, gsd_rescaled, gsd_zeroLine, gsd_zeroLine_icrossVals, y_icrossVals, peaksArray[:,1]]
-        plotDict['xData'] = [x, x, x, icross, icross, peaksArray[:,0]]
-        plotDict['colors'] = ['firebrick', 'darkorchid', "black", 'black', 'dodgerblue', 'darkorange']
-        plotDict['legendLabel'] = ['The data', '2nd derivative', '2nd deri = 0', 'cross point','cross point', 'found peaks']
-        plotDict['fmt'] = ['None', 'None', 'None', 'x', 'o', 'd']
-        plotDict['markersize'] = [5, 5, 5, 10, 9, 10]
-        plotDict['alpha'] = [1.0, 1.0, 1.0, 0.7, 0.7, 0.7]
-        plotDict['ls'] = ['-', 'dashed', 'dotted', 'None', 'None', 'None']
-        plotDict['lineWidth'] = [2, 1, 1, 1, 1, 1]
-        # These must be a single value
-        plotDict['title'] = '2nd Derivative Zero Crossing Zero and Peaks Found'
-        plotDict['xlabel'] = 'Channel Number'
-        plotDict['legendAutoLabel'] = False
-        plotDict['doLegend'] = True
-        plotDict['legendLoc'] = 0
-        plotDict['legendNumPoints'] = 3
-        plotDict['legendHandleLength'] = 5
-        plotDict['doShow'] = True
-        quickPlotter(plotDict=plotDict)
-    return peaksArray
+    if gaussParameters == []:
+        print "No peaks were found by the Mariscotti algorithm, "+ \
+              "but there were places where the second derivative crossed zero."
+        print "This can happen if the maximum allowed error at a peak is greater then the generalized "+\
+              "second derivative (gsd) at that point."
+        print "The 'errFactor' =", errFactor, "can be set using the kwarg 'errFactor' to scale the "+\
+              "maximum allowed error."
+        if showPlot:
+            plotDict = {}
+            plotDict['verbose'] = verbose
+            # plot formatting for index (x) and spectrum values (y) where the gsd (generalized 2nd derivative)
+            # crosses zero (this is marks a boundaries for finding local extrema)
+            y_icrossVals = [y[icrossVal] for icrossVal in icross]
+            x = range(len(y))
+            # plot formatting for the gsd (generalized second derivative)
+            gsd_rescaled = rescale(y, gsd)
+            gsd_zeroLine = rescale(y, gsd, numpy.zeros(len(y)))
+            gsd_zeroLine_icrossVals = rescale(y, gsd, numpy.zeros(len(icross)))
+            maxAllowedError_rescaled  = rescale(y, gsd, maxAllowedError)
+
+            # These can be a list or a single value
+            plotDict['yData'] = [y, maxAllowedError_rescaled, gsd_rescaled, gsd_zeroLine, gsd_zeroLine_icrossVals, y_icrossVals]
+            plotDict['xData'] = [x, x, x, x, icross, icross]
+            plotDict['colors'] = ['firebrick', 'LawnGreen', 'darkorchid', "black", 'black', 'dodgerblue']
+            plotDict['legendLabel'] = ['The data', 'max allowed error', '2nd derivative', '2nd deri = 0', 'cross point', 'cross point']
+            plotDict['fmt'] = ['None', 'None', 'None', 'None', 'x', 'o']
+            plotDict['markersize'] = [5, 5, 5, 5, 10, 9]
+            plotDict['alpha'] = [1.0, 1.0, 1.0, 1.0, 0.7, 0.7]
+            plotDict['ls'] = ['-', '-', 'dashed', 'dotted', 'None', 'None']
+            plotDict['lineWidth'] = [2, 1, 1, 1, 1, 1]
+            # These must be a single value
+            plotDict['title'] = '2nd Derivative Zero Crossing Zero and Peaks Found'
+            plotDict['xlabel'] = 'Channel Number'
+            plotDict['legendAutoLabel'] = False
+            plotDict['doLegend'] = True
+            plotDict['legendLoc'] = 0
+            plotDict['legendNumPoints'] = 3
+            plotDict['legendHandleLength'] = 5
+            plotDict['doShow'] = True
+            quickPlotter(plotDict=plotDict)
+        if verbose:
+            print "Mariscotti algorithm completed.\n"
+        return gaussParameters
+
+    else:
+        gaussParametersArray = numpy.array(gaussParameters)
+        numOfPeaksFound = len(gaussParametersArray[:,0])
+        if verbose:
+            optional_s = ''
+            optional_es = ''
+            if 1 < numOfPeaksFound:
+                optional_s += 's'
+                optional_es += 'es'
+            print "A gaussian distribution is defined as G(x)=A * exp((x-B)^2 / (2 * C^2))"
+            print "The Mariscotti algorithm has identified", numOfPeaksFound , "peak" + optional_s + "."
+            print "The index" + optional_es + " of the data where the peak can be found (B) are:", gaussParametersArray[:,1]
+            print "And the corresponding data value" + optional_s + " for the peak" + optional_s + " (A) are data values:", gaussParametersArray[:,0]
+            print "Finally, the sigma value" + optional_s + " (C) of the peak" + optional_s + " (calculated from the inflection points) are", gaussParametersArray[:,2]
+
+        if showPlot:
+            plotDict = {}
+            plotDict['verbose'] = verbose
+            # plot formatting for index (x) and spectrum values (y) where the gsd (generalized 2nd derivative)
+            # crosses zero (this is marks a boundaries for finding local extrema)
+            y_icrossVals = [y[icrossVal] for icrossVal in icross]
+            x = range(len(y))
+            # plot formatting for the gsd (generalized second derivative)
+            gsd_rescaled = rescale(y, gsd)
+            gsd_zeroLine = rescale(y, gsd, numpy.zeros(len(y)))
+            gsd_zeroLine_icrossVals = rescale(y, gsd, numpy.zeros(len(icross)))
+            maxAllowedError_rescaled  = rescale(y, gsd, maxAllowedError)
+
+            # These can be a list or a single value
+            plotDict['yData'] = [y, maxAllowedError_rescaled, gsd_rescaled, gsd_zeroLine, gsd_zeroLine_icrossVals, y_icrossVals, gaussParametersArray[:,0]]
+            plotDict['xData'] = [x, x, x, x, icross, icross, gaussParametersArray[:,1]]
+            plotDict['colors'] = ['firebrick', 'LawnGreen', 'darkorchid', "black", 'black', 'dodgerblue', 'darkorange']
+            plotDict['legendLabel'] = ['The data', 'max allowed error', '2nd derivative', '2nd deri = 0', 'cross point','cross point', 'found peaks']
+            plotDict['fmt'] = ['None', 'None', 'None', 'None', 'x', 'o', 'd']
+            plotDict['markersize'] = [5, 5, 5, 5, 10, 9, 10]
+            plotDict['alpha'] = [1.0, 1.0, 1.0, 1.0, 0.7, 0.7, 0.7]
+            plotDict['ls'] = ['-', '-', 'dashed', 'dotted', 'None', 'None', 'None']
+            plotDict['lineWidth'] = [2, 1, 1, 1, 1, 1, 1]
+            # These must be a single value
+            plotDict['title'] = '2nd Derivative Zero Crossing Zero and Peaks Found'
+            plotDict['xlabel'] = 'Channel Number'
+            plotDict['legendAutoLabel'] = False
+            plotDict['doLegend'] = True
+            plotDict['legendLoc'] = 0
+            plotDict['legendNumPoints'] = 3
+            plotDict['legendHandleLength'] = 5
+            plotDict['doShow'] = True
+            quickPlotter(plotDict=plotDict)
+        if verbose:
+            print "Mariscotti algorithm completed.\n"
+        return gaussParametersArray
 
 
 if __name__ == '__main__':
@@ -303,17 +365,19 @@ if __name__ == '__main__':
     endIndex = 100
     verbose = True
     numberOfIndexesToSmoothOver = 5
+    errFactor = 50
+    showPlot = True
 
     # Get the test data
     testDataFile = "testData/Am-241.csv"
-    if verbose: print "Getting the test data in the file.", testDataFile
+    if verbose:
+        print "Getting the test data in the file.", testDataFile
     testData = getTableData(testDataFile)
     chan = testData['chan'][:endIndex]
     data = testData['data'][:endIndex]
 
     # apply the mariscotti peak finding algorithm
-    if verbose: print "Doing the Mariscotti peak finding algorithm."
-    peaksArray = numpy.array(mariscotti(data, nsmooth=numberOfIndexesToSmoothOver, plot=True))
+    gaussParametersArray = numpy.array(mariscotti(data, nsmooth=numberOfIndexesToSmoothOver,
+                                                  errFactor=errFactor, plot=showPlot, verbose=verbose))
 
-    print "The indexes of the data peaks are:", peaksArray[:,0]
-    print "And the corresponding data values are data values:", peaksArray[:,1]
+
