@@ -42,13 +42,13 @@ class quickThermalCalc():
         self.albedo = albedo
         self.distToSun_AU = distToSun_AU
         if verbose:
-            print "Starting a quickThermalCalc object named", self.name, 'has:'
+            print "\nStarting a quickThermalCalc object named", self.name, 'has:'
             if area_sqm is not None:
                 print "a surface area of " + str(area_sqm) + " square meters,"
             if heatPower_W is not None:
                 print "an internal heat power of " + str(heatPower_W) + " Watts,"
-            print "an albedo (fraction of light reflected) of " + str(heatPower_W) + " Watts."
-            print 'and is ' + str(distToSun_AU) + ' astronomical units from the Sol.'
+            print "the albedo (fraction of light reflected) is " + str(albedo) + "."
+            print 'and ' + str(distToSun_AU) + ' astronomical units from the Sol.\n'
 
 
     def calcAreaOfRectangularPrism(self, sideA, sideB, sideC, lenIn_m=True, lenIn_cm=False, lenIn_mm=False,
@@ -59,13 +59,13 @@ class quickThermalCalc():
         self.area_sqm = (sideA_m * sideB_m * 2.0) + (sideB_m * sideC_m * 2.0) + (sideC_m * sideA_m * 2.0)
         if verbose:
             print "The calculated Surface Area of", self.name, \
-                "(a rectangular prism) is", self.area_sqm, 'square meters.'
+                "(a rectangular prism) is", self.area_sqm, 'square meters.\n'
 
 
     def calcHeatPower(self, current_A, voltage_V, verbose=False):
         self.heatPower_W = float(current_A) * float(voltage_V)
         if verbose:
-            print "The calculated heat power of", self.name, "is", self.heatPower_W, 'Watts.'
+            print "The calculated heat power of", self.name, "is", self.heatPower_W, 'Watts.\n'
 
 
     def calcCrossSectionsOfRectangularPrism(self, sideA, sideB, sideC, lenIn_m=True, lenIn_cm=False, lenIn_mm=False,
@@ -82,7 +82,7 @@ class quickThermalCalc():
                 "(a rectangular prism) is", self.minCrossSection_sqm, 'square meters.'
         if verbose:
             print "The maximum calculated cross section of", self.name, \
-                "(a rectangular prism) is", self.maxCrossSection_sqm, 'square meters.'
+                "(a rectangular prism) is", self.maxCrossSection_sqm, 'square meters.\n'
 
     def calcSunPower_W(self, verbose=False):
         absorbedFraction = 1.0 - self.albedo
@@ -91,21 +91,21 @@ class quickThermalCalc():
         self.maxSunPower_W = self.maxCrossSection_sqm * self.solarPowerPerArea_W_sqm
         if verbose:
             print "The minimum power absorbed from the Sun by", self.name, "is", self.minSunPower_W, 'Watts.'
-            print "The maximum power absorbed from the Sun by", self.name, "is", self.maxSunPower_W, 'Watts.'
+            print "The maximum power absorbed from the Sun by", self.name, "is", self.maxSunPower_W, 'Watts.\n'
 
     def calcTotalPower(self, verbose=False):
         self.minTotalPower_W = self.heatPower_W + self.minSunPower_W
         self.maxTotalPower_W = self.heatPower_W + self.maxSunPower_W
         if verbose:
             print "The minimum total power radiated by", self.name, "is", self.minTotalPower_W, 'Watts.'
-            print "The maximum total power radiated by", self.name, "is", self.maxTotalPower_W, 'Watts.'
+            print "The maximum total power radiated by", self.name, "is", self.maxTotalPower_W, 'Watts.\n'
 
     def calcTemp(self, verbose=False):
         self.minTemp = (self.minTotalPower_W /  (stefanBoltzmann * self.area_sqm)) ** 0.25
         self.maxTemp = (self.maxTotalPower_W /  (stefanBoltzmann * self.area_sqm)) ** 0.25
         if verbose:
             print "The minimum Temperature of", self.name, "is", self.minTemp, 'Kevin.'
-            print "The maximum Temperature of", self.name, "is", self.maxTemp, 'Kevin.'
+            print "The maximum Temperature of", self.name, "is", self.maxTemp, 'Kevin.\n'
 
 
 
