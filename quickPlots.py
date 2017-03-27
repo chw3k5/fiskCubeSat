@@ -32,10 +32,11 @@ default_plotDict['ErrorMaker'] = '|'
 default_plotDict['ErrorCapSize'] = 4
 default_plotDict['Errorls'] = 'None'
 default_plotDict['Errorliw'] = 1
-default_plotDict['xErrors'] = 'None'
-default_plotDict['yErrors'] = 'None'
+default_plotDict['xErrors'] = None
+default_plotDict['yErrors'] = None
 default_plotDict['legendAutoLabel'] = True
 default_plotDict['legendLabel'] = ''
+
 
 # These must be a single value
 default_plotDict['title'] = ''
@@ -51,7 +52,10 @@ default_plotDict['savePlot'] = False
 default_plotDict['plotFileName'] = 'plot'
 default_plotDict['doEPS'] = True
 default_plotDict['doShow'] = False
+default_plotDict['clearAtTheEnd'] = True
 
+default_plotDict['xLog'] = False
+default_plotDict['yLog'] = False
 
 # this definition uses the default values defined above is there is no user defined value in dataDict
 def extractPlotVal(plotDict, valString, listIndex=0, keys=None):
@@ -129,21 +133,36 @@ def quickPlotter(plotDict):
                                        alpha=alpha))
             leglabels.append(extractPlotVal(plotDict, 'legendLabel', listIndex, keys=keys))
 
-        # plot the yData for this loop
-        if verbose: print 'plotting data in index', listIndex
+        # this is where the data is plotted
+        if verbose:
+            print 'plotting data in index', listIndex
+
+        # plot the yData in Linear-Linear for this loop
         plt.plot(xData, yData,linestyle=ls, color=color,
                  linewidth=lineWidth, marker=fmt, markersize=markersize,
                  markerfacecolor=color, alpha=alpha)
-
+        # are there errorbars on this plot?
         if (('xErrors' in keys) or ('yErrors' in keys)):
+
             # extract the x error (default is "None")
             xError = extractPlotVal(plotDict, 'xErrors', listIndex, keys=keys)
             # extract the y error (default is "None")
             yError = extractPlotVal(plotDict, 'yErrors', listIndex, keys=keys)
+            if (xError is not None) or (yError is not None):
+                plt.errorbar(xData, yData, xerr=xError, yerr=yError,
+                             marker=ErrorMaker, color=color, capsize=ErrorCapSize,
+                             linestyle=Errorls, elinewidth=Errorliw)
 
-            plt.errorbar(xData, yData, xerr=xError, yerr=yError,
-                         marker=ErrorMaker, color=color, capsize=ErrorCapSize,
-                         linestyle=Errorls, elinewidth=Errorliw)
+
+        # options for dyplayining Log plots
+        if extractPlotVal(plotDict, 'xLog', keys=keys):
+            plt.xscale('log')
+        if extractPlotVal(plotDict, 'yLog', keys=keys):
+            plt.yscale('log')
+
+
+
+
 
     # now we will add the title and x and y axis labels
     plt.title(extractPlotVal(plotDict, 'title', keys=keys))
@@ -175,8 +194,10 @@ def quickPlotter(plotDict):
         if verbose: print 'showing the plot in a pop up window'
         plt.show()
 
-
-    if verbose: print '...the quick plotting program has finished.'
+    if extractPlotVal(plotDict, 'clearAtTheEnd', keys=keys):
+        plt.clf()
+    if verbose:
+        print '...the quick plotting program has finished.'
     return
 
 
@@ -215,7 +236,3 @@ def rescale(desired, current, target=None):
         rescaledTarget4 = rescaledTarget3 + minDesired
 
         return rescaledTarget4
-
-
-
-
