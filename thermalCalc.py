@@ -62,6 +62,16 @@ class quickThermalCalc():
                 "(a rectangular prism) is", self.area_sqm, 'square meters.\n'
 
 
+    def calcAreaOfAside(self, sideA, sideB, lenIn_m=True, lenIn_cm=False, lenIn_mm=False,
+                        verbose=False):
+        sideA_m = convertLenUnitsTo_m(sideA, lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
+        sideB_m = convertLenUnitsTo_m(sideB, lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
+        self.area_sqm = (sideA_m * sideB_m)
+        if verbose:
+            print "The calculated Surface Area for", self.name, \
+                "(one side) is", self.area_sqm, 'square meters.\n'
+
+
     def calcHeatPower(self, current_A, voltage_V, verbose=False):
         self.heatPower_W = float(current_A) * float(voltage_V)
         if verbose:
@@ -84,6 +94,7 @@ class quickThermalCalc():
             print "The maximum calculated cross section of", self.name, \
                 "(a rectangular prism) is", self.maxCrossSection_sqm, 'square meters.\n'
 
+
     def calcSunPower_W(self, verbose=False):
         absorbedFraction = 1.0 - self.albedo
         self.solarPowerPerArea_W_sqm = (solarPowerPerAreaEarth_W_sqm / ((self.distToSun_AU ** 2.0))) * absorbedFraction
@@ -93,6 +104,7 @@ class quickThermalCalc():
             print "The minimum power absorbed from the Sun by", self.name, "is", self.minSunPower_W, 'Watts.'
             print "The maximum power absorbed from the Sun by", self.name, "is", self.maxSunPower_W, 'Watts.\n'
 
+
     def calcTotalPower(self, verbose=False):
         self.minTotalPower_W = self.heatPower_W + self.minSunPower_W
         self.maxTotalPower_W = self.heatPower_W + self.maxSunPower_W
@@ -100,14 +112,13 @@ class quickThermalCalc():
             print "The minimum total power radiated by", self.name, "is", self.minTotalPower_W, 'Watts.'
             print "The maximum total power radiated by", self.name, "is", self.maxTotalPower_W, 'Watts.\n'
 
+
     def calcTemp(self, verbose=False):
         self.minTemp = (self.minTotalPower_W /  (stefanBoltzmann * self.area_sqm)) ** 0.25
         self.maxTemp = (self.maxTotalPower_W /  (stefanBoltzmann * self.area_sqm)) ** 0.25
         if verbose:
             print "The minimum Temperature of", self.name, "is", self.minTemp, 'Kevin.'
             print "The maximum Temperature of", self.name, "is", self.maxTemp, 'Kevin.\n'
-
-
 
 
 if __name__ == '__main__':
@@ -119,12 +130,24 @@ if __name__ == '__main__':
     sideC = 11.35 * 1.5
 
 
-    testCubeSat = quickThermalCalc(name='rough calculation',
+    testCubeSat = quickThermalCalc(name='one side for a heat sink',
                                    heatPower_W=maxPower_1UnitHigh_W * 1.5,
                                    albedo=0.0,
                                    distToSun_AU=1.0,
                                    verbose=verbose)
-    testCubeSat.calcAreaOfRectangularPrism(sideA=sideA, sideB=sideB, sideC=sideC, lenIn_cm=True, verbose=verbose)
+    testCubeSat.calcAreaOfAside(sideB, sideC, lenIn_cm=True, verbose=verbose)
+    testCubeSat.calcCrossSectionsOfRectangularPrism(sideA, sideB, sideC, lenIn_cm=True, verbose=verbose)
+    testCubeSat.calcSunPower_W(verbose=verbose)
+    testCubeSat.calcTotalPower(verbose=verbose)
+    testCubeSat.calcTemp(verbose=verbose)
+
+
+    testCubeSat = quickThermalCalc(name='all sides for a heat sink',
+                                   heatPower_W=maxPower_1UnitHigh_W * 1.5,
+                                   albedo=0.0,
+                                   distToSun_AU=1.0,
+                                   verbose=verbose)
+    testCubeSat.calcAreaOfRectangularPrism(sideA, sideB, sideC, lenIn_cm=True, verbose=verbose)
     testCubeSat.calcCrossSectionsOfRectangularPrism(sideA, sideB, sideC, lenIn_cm=True, verbose=verbose)
     testCubeSat.calcSunPower_W(verbose=verbose)
     testCubeSat.calcTotalPower(verbose=verbose)
