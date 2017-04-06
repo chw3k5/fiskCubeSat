@@ -1,8 +1,11 @@
 __author__ = 'chw3k5'
-import numpy
+import numpy, copy
+from operator import itemgetter
 from scipy.optimize import curve_fit
 from mariscotti import mariscotti
 from quickPlots import quickPlotter
+from dataGetter import getTableData
+
 
 
 def gaussian(x, a, b, c):
@@ -13,7 +16,7 @@ def gaussian(x, a, b, c):
     return a * numpy.exp(float(-1.0) * ((x - b)**2.0) / (2.0 * (c**2)))
 
 
-def singleGaussFitter(spectrum, x, guessParameters, showPlot=False, verbose=False, plotDict=None):
+def singleGaussFitter(spectrum, x, guessParameters, peakName='', showPlot=False, plotDict=None):
     if plotDict is None and showPlot:
         print "Cannot show plot, no plotDict was passed. Setting showPlot to False."
         showPlot = False
@@ -22,26 +25,115 @@ def singleGaussFitter(spectrum, x, guessParameters, showPlot=False, verbose=Fals
     x = numpy.array(x)
     # here is where the fitting is calculated
     modelParams, pcov = curve_fit(gaussian, x, spectrum, p0=guessParameters)
-    modelError = numpy.sqrt(numpy.diag(pcov))
+    paramsError = numpy.sqrt(numpy.diag(pcov))
 
     if showPlot:
-        plotDict['yData'].extend([gaussian(x, *modelParams), gaussian(x, guessAplitude, guessMean, guessSigma)])
+        plotDict['yData'].extend([gaussian(x, guessAplitude, guessMean, guessSigma), gaussian(x, *modelParams)])
         plotDict['xData'].extend([x, x])
-        plotDict['legendLabel'].extend(['fitted', 'guess'])
-        plotDict['fmt'].extend(['o', 'd'])
+        plotDict['legendLabel'].extend(['guess' + peakName, 'fitted' + peakName])
+        plotDict['fmt'].extend(['o', 'x'])
         plotDict['markersize'].extend([6, 6])
-        plotDict['alpha'].extend([.6, 0.6])
-        plotDict['ls'].extend(['dotted', 'dashed'])
+        plotDict['alpha'].extend([0.3, 0.5])
+        plotDict['ls'].extend(['dashed', 'dotted'])
         plotDict['lineWidth'].extend([1, 1])
-        return modelParams, modelError, plotDict
+        return modelParams, paramsError, plotDict
     else:
-        return modelParams, modelError
+        return modelParams, paramsError
 
 
-def listGaussFitter(spectrum, guessParameters, verbose=False):
+def listGaussFitter(spectrum, x,
+                    errFactor=1, numberOfIndexesToSmoothOver=1, showPlot_peakFinder=False,
+                    showPlot_gaussFitters=False, verbose=False):
+    # apply the mariscotti peak finding algorithm
+    gaussParametersArray = numpy.array(mariscotti(spectrum, nsmooth=numberOfIndexesToSmoothOver,
+                                                  errFactor=errFactor, plot=showPlot_peakFinder, verbose=verbose))
+
+    # apply some simple offset so that this can work with energy units or channel numbers.
+    energyOffset = float(x[0])
+    energySpacing = (float(x[-1]) - float(x[0]))/float(len(x) - 1)
+    gaussParametersArray_absouleUnits = gaussParametersArray
+    gaussParametersArray_absouleUnits[:,1] = gaussParametersArray[:,1] + energyOffset
+    gaussParametersArray_absouleUnits[:,2] = gaussParametersArray[:,2] * energySpacing
+
+    # Sort the peaks from highest to lowest and put them in a list
+    guessParametersSet = sorted(gaussParametersArray_absouleUnits, key=itemgetter(0), reverse=True)
+
+    # piloting initialization and defaults
+    if showPlot_gaussFitters:
+        plotDict = {}
+        plotDict['verbose'] = verbose
+        plotDict['doShow'] = showPlot_gaussFitters
+
+        # These can be a list or a single value, here we initialize a list.
+        plotDict['yData'] = []
+        plotDict['xData'] = []
+        plotDict['legendLabel'] = []
+        plotDict['fmt'] = []
+        plotDict['markersize'] = []
+        plotDict['alpha'] = []
+        plotDict['ls'] = []
+        plotDict['lineWidth'] = []
+
+        # These must be a single value
+        plotDict['title'] = ''
+        plotDict['xlabel'] = 'Channel Number'
+        plotDict['legendAutoLabel'] = False
+        plotDict['doLegend'] = True
+        plotDict['legendLoc'] = 0
+        plotDict['legendNumPoints'] = 3
+        plotDict['legendHandleLength'] = 5
+        plotDict['clearAtTheEnd'] = False
 
 
-    return
+        # append the plot values for the raw spectrum
+        plotDict['yData'].append(spectrum[:])
+        plotDict['xData'].append(x)
+        plotDict['legendLabel'].append('rawData')
+        plotDict['fmt'].append('None')
+        plotDict['markersize'].append(5)
+        plotDict['alpha'].append(1.0)
+        plotDict['ls'].append('solid')
+        plotDict['lineWidth'].append(3)
+    else:
+        plotDict = None
+
+    # get the model parameters and Error for all the found peaks in the list.
+    # list of tuple, [(modelParam, paramsError), ]
+    # where modelParam = [amplitude, mean, sigma],  paramsError = [amplitude error, mean error, sigma error]
+    modelInfo = []
+    numOfFitsInList = len(guessParametersSet)
+    formatStr = '%1.4f'
+    spectrumForFitter = copy.copy(spectrum)
+    for (fitNum, guessParameters) in list(enumerate(guessParametersSet)):
+        modelParams, paramsError, plotDict = \
+            singleGaussFitter(spectrumForFitter, x, guessParameters,
+                              peakName=' peak ' + str(fitNum + 1),
+                              showPlot=True,
+                              plotDict=plotDict)
+        # quickPlotter(plotDict=plotDict)
+        # subtract the fit from the spectrum so that the next peak can't find it.
+        spectrumForFitter -= gaussian(x, *modelParams)
+        modelInfo.append((modelParams, paramsError))
+        if verbose:
+            print "fitting for the found peak", fitNum + 1, "of", numOfFitsInList
+            print "in amplitude (guess, fitted, error) = (" + \
+                  str(formatStr % guessParameters[0]) + ", " +\
+                  str(formatStr % modelParams[0]) + ", " +\
+                  str(formatStr % paramsError[0]) + ")"
+            print "in mean (guess, fitted, error) = (" + \
+                  str(formatStr % guessParameters[1]) + ", " +\
+                  str(formatStr % modelParams[1]) + ", " +\
+                  str(formatStr % paramsError[1]) + ")"
+            print "in sigma (guess, fitted, error) = (" + \
+                  str(formatStr % guessParameters[2]) + ", " +\
+                  str(formatStr % modelParams[2]) + ", " +\
+                  str(formatStr % paramsError[2]) + ")\n"
+
+
+    if showPlot_gaussFitters:
+        quickPlotter(plotDict=plotDict)
+
+    return modelInfo
 
 
 def deconvolveGaussFitter():
@@ -70,16 +162,15 @@ def deconvolveGaussFitter():
 
 
 if __name__ == '__main__':
-    from dataGetter import getTableData
+
     # A few options for this data
     endIndex = 100
     verbose = True
     numberOfIndexesToSmoothOver = 5
-    errFactor = 20
+    errFactor = 50
     showPlot_peakFinder = False
     showPlot_gaussFitters = True
 
-    peakNum = 3
 
     # Get the test data
     testDataFile = "testData/Am-241.csv"
@@ -87,68 +178,16 @@ if __name__ == '__main__':
         print "Getting the test data in the file.", testDataFile
     testData = getTableData(testDataFile)
     chan = testData['chan'][:endIndex]
-    data = testData['data'][:endIndex]
+    spectrum = testData['data'][:endIndex]
 
-    # apply the mariscotti peak finding algorithm
-    gaussParametersArray = numpy.array(mariscotti(data, nsmooth=numberOfIndexesToSmoothOver,
-                                                  errFactor=errFactor, plot=showPlot_peakFinder, verbose=verbose))
 
-    #################
-    ### NEW STUFF ###
-    #################
-    energyOffset = float(chan[0])
-    energySpacing = (float(chan[-1]) - float(chan[0]))/float(len(chan) - 1)
-    gaussParametersArray_absouleUnits = gaussParametersArray
-    gaussParametersArray_absouleUnits[:,1] = gaussParametersArray[:,1] + energyOffset
-    gaussParametersArray_absouleUnits[:,2] = gaussParametersArray[:,2] * energySpacing
+    modelInfo = listGaussFitter(spectrum, chan,
+                                errFactor=errFactor,
+                                numberOfIndexesToSmoothOver=numberOfIndexesToSmoothOver,
+                                showPlot_peakFinder=showPlot_peakFinder,
+                                showPlot_gaussFitters=showPlot_gaussFitters,
+                                verbose=verbose)
 
-    guessParameters = gaussParametersArray_absouleUnits[peakNum, :]
-
-    if showPlot_gaussFitters:
-        plotDict = {}
-        plotDict['verbose'] = verbose
-        plotDict['doShow'] = showPlot_gaussFitters
-
-        # These can be a list or a single value, here we initialize a list.
-        plotDict['yData'] = []
-        plotDict['xData'] = []
-        plotDict['legendLabel'] = []
-        plotDict['fmt'] = []
-        plotDict['markersize'] = []
-        plotDict['alpha'] = []
-        plotDict['ls'] = []
-        plotDict['lineWidth'] = []
-
-        # These must be a single value
-        plotDict['title'] = ''
-        plotDict['xlabel'] = 'Channel Number'
-        plotDict['legendAutoLabel'] = False
-        plotDict['doLegend'] = True
-        plotDict['legendLoc'] = 0
-        plotDict['legendNumPoints'] = 3
-        plotDict['legendHandleLength'] = 5
-
-        # append the plot values for the raw data
-        plotDict['yData'].append(data)
-        plotDict['xData'].append(chan)
-        plotDict['legendLabel'].append('rawData')
-        plotDict['fmt'].append('None')
-        plotDict['markersize'].append(5)
-        plotDict['alpha'].append(1.0)
-        plotDict['ls'].append('solid')
-        plotDict['lineWidth'].append(3)
-
-        modelParams, modelError, plotDict = \
-            singleGaussFitter(data, chan, guessParameters,
-                              showPlot=True,
-                              verbose=verbose, plotDict=plotDict)
-
-        quickPlotter(plotDict=plotDict)
-    else:
-        modelParams, modelError = \
-            singleGaussFitter(data, chan, guessParameters,
-                              showPlot=False,
-                              verbose=verbose, plotDict=None)
 
 
 

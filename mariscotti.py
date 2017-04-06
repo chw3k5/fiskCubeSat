@@ -28,25 +28,25 @@
 #  noisy.
 #
 # Inputs:
-#  y        - vector of values representing a spectrum
-#             containing peaks
-#  err      - keyword, contains the  
-#             uncertainty in the y values.  If not set, 
-#             then the y values are assumed to be
-#             Poisson random variates (counts)
-#  nsmooth  - keyword, contains the number
-#             of smoothing steps (must be greater than 0). 
-#             if not set, then 5 smoothing steps are used
-#  factor     - keyword, for peak detection, the generalized 
-#             second derivative (GSD) at candidate peak 
-#             locations must by greater than factor times 
-#             the GSD uncertainty. The default is 
-#             factor=1.
-#  plot     - keyword, if set produces a diagnostic plot
-#  pk_gsd   - keyword, if set uses the maximum GSD value
-#             to identify the peak channel# otherwise,
-#             the maximum y value is used to determine the
-#             peak channel.
+#  y         - vector of values representing a spectrum
+#              containing peaks
+#  err       - keyword, contains the
+#              uncertainty in the y values.  If not set,
+#              then the y values are assumed to be
+#              Poisson random variates (counts)
+#  nsmooth   - keyword, contains the number
+#              of smoothing steps (must be greater than 0).
+#              if not set, then 5 smoothing steps are used
+#  errFactor - keyword, for peak detection, the generalized
+#              second derivative (GSD) at candidate peak
+#              locations must by greater than factor times
+#              the GSD uncertainty. The default is
+#              errfactor=1.
+#  plot     -  keyword, if set produces a diagnostic plot
+#  pk_gsd   -  keyword, if set uses the maximum GSD value
+#              to identify the peak channel# otherwise,
+#              the maximum y value is used to determine the
+#              peak channel.
 #  
 # Outputs:
 #  gaussParametersArray   - 'None' or [] or numpy array
