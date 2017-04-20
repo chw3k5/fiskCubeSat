@@ -1,122 +1,8 @@
 import numpy
-from numpy import pi, sqrt
+from radiationCalc import piHalf, pi, pi2, pi4, maxPower_1UnitHigh_W, stefanBoltzmann,\
+    earthDistanceToSun_m, temperatureOfEarth_K, diameterOfEarth_m,\
+    temperatureOfSun_K, diameterOfSun_m, calcArea, calcCrossSection, thermalRadiationSource
 
-stefanBoltzmann = 5.670367e-8 # W / (m^2 K^4)
-earthDistanceToSun_m = 149.6e9 # meters
-
-diameterOfSun_m = 1.391e9
-diameterOfEarth_m = 12.742e6
-
-temperatureOfSun_K = 5778.0
-temperatureOfEarth_K = 287.0
-
-
-solarPowerPerAreaEarth_W_sqm = 1368. # W / m^2
-
-sqrtOf2 = numpy.sqrt(2.0)
-
-def radiatedPower(temperature_K, area_sqm):
-    return stefanBoltzmann * float(area_sqm) * (float(temperature_K) ** 4.0)
-
-maxPower_1Unitlow_W = 1.
-maxPower_1UnitHigh_W = 2.5
-maxPower_2Unitlow_W = 2.
-maxPower_2UnitHigh_W = 5.
-maxPower_3Unitlow_W = 7.
-maxPower_3UnitHigh_W = 20.
-
-
-
-def convertLenUnitsTo_m(lenVal, lenIn_m=True, lenIn_cm=False, lenIn_mm=False):
-    if lenIn_cm:
-        lenVal = lenVal / 100.
-    elif lenIn_mm:
-        lenVal = lenVal / 1000.
-    else:
-        lenVal = float(lenVal)
-    return lenVal
-
-
-def calcArea(size, type='rectangle',
-             lenIn_m=True, lenIn_cm=False, lenIn_mm=False):
-        if type == 'rectangle':
-            sideA_m = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            sideB_m = convertLenUnitsTo_m(size[1], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            area_sqm = (sideA_m * sideB_m)
-        elif type == 'disk':
-            radius = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            area_sqm = pi * (radius ** 2)
-        elif type == 'rectangularPrism':
-            sideA_m = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            sideB_m = convertLenUnitsTo_m(size[1], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            sideC_m = convertLenUnitsTo_m(size[2], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            area_sqm = (sideA_m * sideB_m * 2.0) + (sideB_m * sideC_m * 2.0) + (sideC_m * sideA_m * 2.0)
-        elif type == 'sphere':
-            radius = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            area_sqm = 4.0 * pi * (radius ** 2)
-        else:
-            print "Type:", type, "was unexpected."
-            area_sqm = raw_input('enter an area in square meters, or start over and use an expected type.')
-        return area_sqm
-
-
-def calcCrossSection(size, type='rectangle',
-             lenIn_m=True, lenIn_cm=False, lenIn_mm=False):
-        if type == 'rectangle':
-            sideA_m = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            sideB_m = convertLenUnitsTo_m(size[1], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            maxCrossSection_sqm = (sideA_m * sideB_m)
-            minCrossSection_sqm = 0.0
-            aveCrossSection_sqm = maxCrossSection_sqm / 2.0
-        elif type == 'disk':
-            radius = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            maxCrossSection_sqm = pi * (radius ** 2)
-            minCrossSection_sqm = 0.0
-            aveCrossSection_sqm = maxCrossSection_sqm / 2.0
-        elif type == 'rectangularPrism':
-            sideA_m = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            sideB_m = convertLenUnitsTo_m(size[1], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            sideC_m = convertLenUnitsTo_m(size[2], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-
-            [minSide, middleSide, maxSide] = sorted([sideA_m, sideB_m, sideC_m])
-            minCrossSection_sqm = minSide * middleSide
-            # this is not totally correct but is close, real max is bigger
-            maxCrossSection_sqm = middleSide * maxSide * sqrtOf2
-            # In 3-d the average projected area of a convex solid is 1/4 the surface area, as
-            # Cauchy showed in the 19th century.
-            surfaceArea = calcArea(size=size, type='rectangularPrism', lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            aveCrossSection_sqm = surfaceArea * 0.25
-        elif type == 'sphere':
-            radius = convertLenUnitsTo_m(size[0], lenIn_m=lenIn_m, lenIn_cm=lenIn_cm, lenIn_mm=lenIn_mm)
-            minCrossSection_sqm =  pi * (radius ** 2)
-            maxCrossSection_sqm = minCrossSection_sqm
-            aveCrossSection_sqm = minCrossSection_sqm
-        else:
-            print "Type:", type, "was unexpected."
-            maxCrossSection_sqm = raw_input('enter an area in square meters for the maximum cross section, or start over and use an expected type.')
-            minCrossSection_sqm = raw_input('enter an area in square meters for the minimum cross section, or start over and use an expected type.')
-            aveCrossSection_sqm = raw_input('enter an area in square meters for the average cross section, or start over and use an expected type.')
-        return maxCrossSection_sqm, minCrossSection_sqm, aveCrossSection_sqm
-
-
-
-
-
-class radiationSource():
-    def __init__(self, name, size_m, distance_m=earthDistanceToSun_m, temperature_K=300.0,  albedo=1.0, shape='sphere'):
-        self.name = name
-        self.shape = shape
-        self.distance_m = float(distance_m)
-        self.temperature_K = float(temperature_K)
-        self.albedo = float(albedo)
-        if shape == 'sphere':
-            self.diameter_m = float(size_m[0])
-            self.radius_m = self.diameter_m * 0.5
-            self.luminosity = stefanBoltzmann * (self.temperature_K ** 4.0) * 4.0 * pi * (self.radius_m ** 2.0)
-            hypotenuse = sqrt((self.radius_m ** 2.0) + (self.distance_m ** 2.0))
-            self.solidAngle = 2.0 * pi * (1.0 - (self.distance_m / hypotenuse))
-            self.flux = self.luminosity / (4.0 * pi * (self.distance_m ** 2.0))
-            self.absorbedFlux_W_sqm = self.flux * (1.0 - self.albedo)
 
 
 class quickThermalCalc():
@@ -129,7 +15,7 @@ class quickThermalCalc():
             print "\nStarting a quickThermalCalc object named", self.name, 'has:'
             if heatPower_W is not None:
                 print "an internal heat power of " + str(heatPower_W) + " Watts,"
-            
+
             if self.radiationSources != []:
                 print "\nThere are", len(self.radiationSources), "radiation sources.\n"
                 for (sourceIndex, radiationSource) in list(enumerate(self.radiationSources)):
@@ -142,7 +28,7 @@ class quickThermalCalc():
                     else:
                         print 'at a distance of', radiationSource.distance_m, 'meters.\n'
                     print "The albedo for an absorber seeing this source (fraction of light reflected) is " + str(radiationSource.albedo) + ".\n"
-                        
+
                 print ' '
 
 
@@ -197,9 +83,9 @@ class quickThermalCalc():
         self.maxSunPower_W = self.maxCrossSection_sqm * self.absorbedFlux_W_sqm
         self.aveSunPower_W = self.aveCrossSection_sqm * self.absorbedFlux_W_sqm
         if verbose:
-            print "The minimum power absorbed from the Sun by", self.name, "is", self.minSunPower_W, 'Watts.'
-            print "The maximum power absorbed from the Sun by", self.name, "is", self.maxSunPower_W, 'Watts.'
-            print "The average power absorbed from the Sun by", self.name, "is", self.aveSunPower_W, 'Watts.\n'
+            print "The minimum power absorbed by", self.name, "is", self.minSunPower_W, 'Watts.'
+            print "The maximum power absorbed by", self.name, "is", self.maxSunPower_W, 'Watts.'
+            print "The average power absorbed by", self.name, "is", self.aveSunPower_W, 'Watts.\n'
 
     def calcTotalPower(self, verbose=False):
         self.minTotalPower_W = self.heatPower_W + self.minSunPower_W
@@ -222,50 +108,54 @@ class quickThermalCalc():
 if __name__ == '__main__':
     verbose = True
 
+    doAllSides = True
+    doOneSide = False
+
     # in centimeters
     sideA = 10
     sideB = 10
     sideC = 11.35 * 1.5
 
-    floatAltitude = float(39624.0)
+    floatAltitude = float(33.5e3)
     floatRadius = floatAltitude + (diameterOfEarth_m / 2.0)
 
-    sunAlbedo = float(0)
-    earthAlbedo = float(0)
+    sunAlbedo = float(0.0)
+    earthAlbedo = float(0.0)
+
+    protonFlux = 4.0 / (100.0 ** 2.0) # protons / (m^2 s)
 
 
-
-    sunSource = radiationSource(name='Sol', size_m=[diameterOfSun_m], distance_m=earthDistanceToSun_m,
+    sunSource = thermalRadiationSource(name='Sol', size_m=[diameterOfSun_m], distance_m=earthDistanceToSun_m,
                                 temperature_K=temperatureOfSun_K, albedo=sunAlbedo)
-    earthSource = radiationSource(name='Earth', size_m=[diameterOfEarth_m], distance_m=floatRadius,
+    earthSource = thermalRadiationSource(name='Earth', size_m=[diameterOfEarth_m], distance_m=floatRadius,
                                 temperature_K=temperatureOfEarth_K, albedo=earthAlbedo)
 
 
+    if doOneSide:
+        testCubeSat = quickThermalCalc(name='one side for a heat sink',
+                                       radiationSources = [sunSource, earthSource],
+                                       heatPower_W=maxPower_1UnitHigh_W * 1.5,
+                                       verbose=verbose)
+        testCubeSat.calcRadiatorArea(size=[sideB, sideC], type='rectangle', lenIn_cm=True, verbose=verbose)
+        testCubeSat.calcAbsorberArea(size=[sideA, sideB, sideC], type='rectangularPrism', lenIn_cm=True, verbose=verbose)
+        testCubeSat.calcCrossSections(size=[sideA, sideB, sideC], type='rectangularPrism',
+                                                        lenIn_cm=True, verbose=verbose)
+        testCubeSat.calcAbsorbedPower(verbose=verbose)
+        testCubeSat.calcTotalPower(verbose=verbose)
+        testCubeSat.calcTemp(verbose=verbose)
 
-    testCubeSat = quickThermalCalc(name='one side for a heat sink',
-                                   radiationSources = [sunSource, earthSource],
-                                   heatPower_W=maxPower_1UnitHigh_W * 1.5,
-                                   verbose=verbose)
-    testCubeSat.calcRadiatorArea(size=[sideB, sideC], type='rectangle', lenIn_cm=True, verbose=verbose)
-    testCubeSat.calcAbsorberArea(size=[sideA, sideB, sideC], type='rectangularPrism', lenIn_cm=True, verbose=verbose)
-    testCubeSat.calcCrossSections(size=[sideA, sideB, sideC], type='rectangularPrism',
-                                                    lenIn_cm=True, verbose=verbose)
-    testCubeSat.calcAbsorbedPower(verbose=verbose)
-    testCubeSat.calcTotalPower(verbose=verbose)
-    testCubeSat.calcTemp(verbose=verbose)
+    if doAllSides:
+        testCubeSat = quickThermalCalc(name='all sides for a heat sink', radiationSources = [sunSource, earthSource],
+                                       heatPower_W=maxPower_1UnitHigh_W * 1.5,
+                                       verbose=verbose)
 
-
-    testCubeSat = quickThermalCalc(name='all sides for a heat sink', radiationSources = [sunSource, earthSource],
-                                   heatPower_W=maxPower_1UnitHigh_W * 1.5,
-                                   verbose=verbose)
-
-    testCubeSat.calcRadiatorArea(size=[sideA, sideB, sideC], type='rectangularPrism', lenIn_cm=True, verbose=verbose)
-    testCubeSat.calcAbsorberArea(size=[sideA, sideB, sideC], type='rectangularPrism', lenIn_cm=True, verbose=verbose)
-    testCubeSat.calcCrossSections(size=[sideA, sideB, sideC], type='rectangularPrism',
-                                                    lenIn_cm=True, verbose=verbose)
-    testCubeSat.calcAbsorbedPower(verbose=verbose)
-    testCubeSat.calcTotalPower(verbose=verbose)
-    testCubeSat.calcTemp(verbose=verbose)
+        testCubeSat.calcRadiatorArea(size=[sideA, sideB, sideC], type='rectangularPrism', lenIn_cm=True, verbose=verbose)
+        testCubeSat.calcAbsorberArea(size=[sideA, sideB, sideC], type='rectangularPrism', lenIn_cm=True, verbose=verbose)
+        testCubeSat.calcCrossSections(size=[sideA, sideB, sideC], type='rectangularPrism',
+                                                        lenIn_cm=True, verbose=verbose)
+        testCubeSat.calcAbsorbedPower(verbose=verbose)
+        testCubeSat.calcTotalPower(verbose=verbose)
+        testCubeSat.calcTemp(verbose=verbose)
 
 
 
