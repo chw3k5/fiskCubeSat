@@ -1,4 +1,6 @@
 import numpy
+from scipy.optimize import least_squares
+from operator import itemgetter
 
 from quickPlots import quickPlotter
 from pulseReadIn import loadPulses, saveProcessedData
@@ -8,9 +10,9 @@ def initializeTestPlots(doShow, verbose):
     plotDict = {}
     plotDict['verbose'] = verbose
     # These must be a single value
-    plotDict['title'] = 'Pulse Data Read in and Trim.'
-    plotDict['xlabel'] = 'Time'
-    plotDict['ylabel'] = 'Voltage'
+    plotDict['title'] = 'Single Pulse Calculations'
+    plotDict['xlabel'] = 'Time (ns)'
+    plotDict['ylabel'] = 'Voltage (V)'
     plotDict['legendAutoLabel'] = False
     plotDict['doLegend'] = True
     plotDict['legendLoc'] = 0
@@ -60,8 +62,150 @@ def trimToMin(arrayData, smoothedData, xData):
     return keptData, keptXData
 
 
+def calcIntegral(yData, xData, plotDict):
+    # calculate the the integral of the data, (non-uniform grid).
+    # Using a trapezoidal method of integration using the mid points.
+    numberOfKeptDataPoints = len(yData)
+    midXPoints = numpy.zeros((numberOfKeptDataPoints + 1))
+    midYPoints = numpy.zeros((numberOfKeptDataPoints + 1))
+    # the start and end points need to be treated differently
+    midXPoints[0] = xData[0]
+    midXPoints[-1] = xData[-1]
+    # the start and end points need to be treated differently
+    midYPoints[0] = yData[0]
+    midYPoints[-1] = yData[-1]
+    # Calculate the midpoints of the x and y data
+    if numberOfKeptDataPoints > 1:
+        midXPoints[1:-1] = (xData[1:] + xData[:-1]) / 2.0
+        midYPoints[1:-1] = (yData[1:] + yData[:-1]) / 2.0
+    # Use the trapezoidal integral calculation method
+    # dx is the bases of each trapezoid
+    dx = midXPoints[1:] - midXPoints[:-1]
+    # dy is the average height of the trapezoid
+    dy = (midYPoints[1:] + midYPoints[:-1]) / 2.0
+    integral = numpy.sum(dx * dy)
+    # plot the midpoint calculation
+    if plotDict['doShow']:
+        plotDict = appendToTestPlots(plotDict,
+                                     midYPoints,
+                                     midXPoints,
+                                     legendLabel='Integral Calc = ' + str('%02.6f' % integral),
+                                     fmt='x',
+                                     markersize=4,
+                                     alpha=1.0,
+                                     ls='None',
+                                     lineWidth=1)
+    return integral, plotDict
 
-def pulsePipeline(pulseDict, plotDict, conv_channels, trimBeforeMin):
+
+def naturalPower(xData, amplitude, tau):
+    return amplitude * numpy.exp(-xData / tau)
+
+
+def sumOfNaturalPowers(level, yData, xData):
+    if level == 1:
+        optimizeFunc = lambda (Amp1, Tau1): \
+            naturalPower(xData, Amp1, Tau1) - yData
+    elif level == 2:
+        optimizeFunc = lambda (Amp1, Tau1, Amp2, Tau2): \
+            naturalPower(xData, Amp1, Tau1) + \
+            naturalPower(xData, Amp2, Tau2) - yData
+    elif level == 3:
+        optimizeFunc = lambda (Amp1, Tau1, Amp2, Tau2, Amp3, Tau3): \
+            naturalPower(xData, Amp1, Tau1) + \
+            naturalPower(xData, Amp2, Tau2) + \
+            naturalPower(xData, Amp3, Tau3) - yData
+    elif level == 4:
+        optimizeFunc = lambda (Amp1, Tau1, Amp2, Tau2, Amp3, Tau3, Amp4, Tau4): \
+            naturalPower(xData, Amp1, Tau1) + \
+            naturalPower(xData, Amp2, Tau2) + \
+            naturalPower(xData, Amp3, Tau3) + \
+            naturalPower(xData, Amp4, Tau4) - yData
+    else:
+        optimizeFunc = None
+    return optimizeFunc
+
+
+def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('inf')):
+    guessParams = []
+    guessAmp = yData[0]
+    if guessAmp < 0:
+        lowerBoundAmp = -upperBoundAmp
+        upperBoundAmp = float(0)
+        isPositive = False
+    else:
+        lowerBoundAmp = float(0)
+        upperBoundAmp = upperBoundAmp
+        isPositive = True
+    guessTau = 1.0 / (1.0 + ((yData[-1] - yData[0]) / (xData[-1] - xData[0])))
+    lowerBoundTau = float(0)
+    upperBoundTau = float('inf')
+    guessParams.append((guessAmp, lowerBoundAmp, upperBoundAmp, guessTau, lowerBoundTau, upperBoundTau))
+    guessParams = guessParams * levelNum
+
+    guesses = []
+    lowerBounds = []
+    upperBounds = []
+    levelNum = len(guessParams)
+    for (guessAmp, lowerBoundAmp, upperBoundAmp, guessTau, lowerBoundTau, upperBoundTau) in guessParams:
+        guesses.append(guessAmp)
+        guesses.append(guessTau)
+        lowerBounds.append(lowerBoundAmp)
+        lowerBounds.append(lowerBoundTau)
+        upperBounds.append(upperBoundAmp)
+        upperBounds.append(upperBoundTau)
+    optimizeFunc = sumOfNaturalPowers(levelNum, yData, xData)
+    lsq_results = least_squares(optimizeFunc,
+                                 tuple(guesses),
+                                 bounds=(tuple(lowerBounds), tuple(upperBounds)))
+    if lsq_results['success']:
+        cost = lsq_results['cost']
+        residuals = lsq_results['fun']
+        # jac = lsq_results1['jac']
+        fittedAmpTau = []
+        for paramsIndex in range(levelNum):
+            AmpIndex = 2 * paramsIndex
+            TauIndex = (2 * paramsIndex) + 1
+            fittedAmpTau.append((lsq_results['x'][AmpIndex], lsq_results['x'][TauIndex]))
+        sortedFittedAmpTau = sorted(fittedAmpTau, key=itemgetter(0), reverse=isPositive)
+        # print "guesses", guesses
+        # print "results", sortedFittedAmpTau
+        if plotDict['doShow']:
+            paramString = 'Fitted (amp, tau) ['
+            for (amp, tau) in sortedFittedAmpTau:
+                paramString += '(' + str('%2.3f' % amp) + ', ' + str('%2.2f' % tau) + '), '
+            paramString = paramString[:-2] + ']'
+
+            plotDict = appendToTestPlots(plotDict,
+                                         optimizeFunc(lsq_results['x']) + yData,
+                                         xData,
+                                         legendLabel=paramString,
+                                         fmt='None',
+                                         markersize=4,
+                                         alpha=1.0,
+                                         ls='solid',
+                                         lineWidth=1)
+            plotDict = appendToTestPlots(plotDict,
+                                         residuals,
+                                         xData,
+                                         legendLabel='Level ' + str(levelNum) + ' Residuals, cost=' + str(cost),
+                                         fmt='None',
+                                         markersize=4,
+                                         alpha=1.0,
+                                         ls='solid',
+                                         lineWidth=1)
+    else:
+        sortedFittedAmpTau = None
+        cost = float('inf')
+
+
+    return sortedFittedAmpTau, cost, plotDict
+
+
+
+
+
+def pulsePipeline(pulseDict, plotDict, conv_channels, trimBeforeMin, numOfExponents=1, upperBoundAmp=float('inf')):
     arrayData = pulseDict['arrayData']
     xData = pulseDict['xData']
     # Make x data, and send the raw data to the plot
@@ -114,6 +258,22 @@ def pulsePipeline(pulseDict, plotDict, conv_channels, trimBeforeMin):
         pulseDict['keptData'] = None
         pulseDict['keptXData'] = None
 
+    # calculate integral
+    pulseDict['integral'], plotDict = calcIntegral(pulseDict['keptData'],
+                                                   pulseDict['keptXData'],
+                                                   plotDict)
+
+    # fit with a sum of exponential
+    fittedAmpTau, pulseDict['fittedCost'], plotDict \
+        = fittingSumOfPowers(pulseDict['keptData'], pulseDict['keptXData'], numOfExponents, plotDict, upperBoundAmp)
+    if fittedAmpTau is not None:
+        for (index, (amp, tau)) in list(enumerate(fittedAmpTau)):
+            pulseDict['fittedAmp' + str(index + 1)] = amp
+            pulseDict['fittedTau' + str(index + 1)] = tau
+    else:
+        for index in range(numOfExponents):
+            pulseDict['fittedAmp' + str(index + 1)] = None
+            pulseDict['fittedTau' + str(index + 1)] = None
     return pulseDict, plotDict
 
 
@@ -123,6 +283,8 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
                      skipRows=1, delimiter=',',
                      trimBeforeMin=True,
                      conv_channels=1,
+                     numOfExponents=1,
+                     upperBoundAmp=float('inf'),
                      pulseDataTypesToSave=[],
                      outPutFileBase='trimmedData.csv',
                      saveAsColumns=True,
@@ -132,7 +294,6 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
                      verbose=True):
     if 'uniqueID' not in pulseDataTypesToExtract:
         pulseDataTypesToExtract.append('uniqueID')
-
 
     listOfDataDicts = loadPulses(folderName,
                                  fileNamePrefix=fileNamePrefix,
@@ -188,18 +349,28 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
             pulseDict['rawDataFileName'] = tableDict['fileName']
 
             # process the pulse
-            pulseDict, plotDict = pulsePipeline(pulseDict, plotDict, conv_channels, trimBeforeMin)
+            pulseDict, plotDict = pulsePipeline(pulseDict, plotDict, conv_channels, trimBeforeMin,
+                                                numOfExponents, upperBoundAmp)
 
             # extract the required data types for output
+            removeFlag = False
             for pulseDataType in pulseDataTypesToExtract:
-                extractedDataDict[pulseDataType].append(pulseDict[pulseDataType])
+                # if a data type is None we flag to remove this pulse before it get in with the rest of the data
+                if pulseDict[pulseDataType] is None:
+                    removeFlag = True
+            if not removeFlag:
+                for pulseDataType in pulseDataTypesToExtract:
+                    extractedDataDict[pulseDataType].append(pulseDict[pulseDataType])
         if showTestPlots_Pulses:
             quickPlotter(plotDict=plotDict)
 
         if verbose:
             if IDindex % modLen == 0:
-                print "File read-in and operations are " \
+                print "Pulse operations are " \
                       + str('%02.2f' % (IDindex*100.0/float(numOfDataDicts))) + " % complete."
+    # Change the data from a lists to arrays
+    for pulseDataType in extractedDataDict.keys():
+        extractedDataDict[pulseDataType] = numpy.array(extractedDataDict[pulseDataType])
 
     for saveDataType in pulseDataTypesToSave:
         listOfHeaderNames = extractedDataDict['uniqueID']
