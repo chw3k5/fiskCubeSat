@@ -108,7 +108,9 @@ from quickPlots import quickPlotter, rescale
 
 
 def mariscotti(y, **kwargs):
+
     keys = kwargs.keys()
+    print keys
     y = numpy.array(y)
 
     # defaults
@@ -267,7 +269,7 @@ def mariscotti(y, **kwargs):
               "but there were places where the second derivative crossed zero."
         print "This can happen if the maximum allowed error at a peak is greater then the generalized "+\
               "second derivative (gsd) at that point."
-        print "The 'errFactor' =", errFactor, "can be set using the kwarg 'errFactor' to scale the "+\
+        print "The 'errFactor' =", factor, "can be set using the kwarg 'errFactor' to scale the "+\
               "maximum allowed error."
         if showPlot:
             plotDict = {}
@@ -369,7 +371,7 @@ if __name__ == '__main__':
     showPlot = True
 
     # Get the test data
-    testDataFile = "testData/Am-241.csv"
+    testDataFile = "Am-241.csv"
     if verbose:
         print "Getting the test data in the file.", testDataFile
     testData = getTableData(testDataFile)

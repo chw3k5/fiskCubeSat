@@ -11,7 +11,7 @@ def initializeTestPlots(doShow, verbose):
     plotDict['verbose'] = verbose
     # These must be a single value
     plotDict['title'] = 'Single Pulse Calculations'
-    plotDict['xlabel'] = 'Time (ns)'
+    plotDict['xlabel'] = 'Time (us)'
     plotDict['ylabel'] = 'Voltage (V)'
     plotDict['legendAutoLabel'] = False
     plotDict['doLegend'] = True
@@ -46,6 +46,30 @@ def appendToTestPlots(plotDict, arrayData, xData, legendLabel, fmt, markersize, 
     plotDict['ls'].append(ls)
     plotDict['lineWidth'].append(lineWidth)
     return plotDict
+
+
+
+def removeOutliers(data, multiplesOfMedianStdForRejection=2.0):
+    dataMedian = numpy.median(data)
+    difference = numpy.abs(data - dataMedian)
+    medianOfDifference = numpy.median(difference)
+    testValues = difference / medianOfDifference if medianOfDifference else 0.
+    outliersMask = multiplesOfMedianStdForRejection < testValues
+    medianArray = numpy.ones(numpy.shape(data), dtype=data.dtype) * dataMedian
+    try:
+        numpy.putmask(data, outliersMask, medianArray)
+    except ValueError:
+        print 'putmask: mask and data must be the same size'
+        print 'data shape:', numpy.shape(data),  'medianArray shape', numpy.shape(medianArray)
+        print 'outliersMask shape', numpy.shape(outliersMask),
+        print 'testValues=', testValues
+        print 'medianOfDifference', medianOfDifference
+        print 'dataMedian=', dataMedian
+        print 'mean(data)', numpy.mean(data)
+        print 'max(data)', numpy.max(data)
+        print 'min(data)', numpy.min(data)
+
+    return data, numpy.logical_not(outliersMask)
 
 
 def convData(arrayData, conv_channels):
@@ -133,10 +157,12 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
         lowerBoundAmp = -upperBoundAmp
         upperBoundAmp = float(0)
         isPositive = False
+        guessAmp = numpy.max((lowerBoundAmp, guessAmp))
     else:
         lowerBoundAmp = float(0)
         upperBoundAmp = upperBoundAmp
         isPositive = True
+        guessAmp = numpy.min((upperBoundAmp, guessAmp))
     guessTau = 1.0 / (1.0 + ((yData[-1] - yData[0]) / (xData[-1] - xData[0])))
     lowerBoundTau = float(0)
     upperBoundTau = float('inf')
@@ -155,6 +181,8 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
         upperBounds.append(upperBoundAmp)
         upperBounds.append(upperBoundTau)
     optimizeFunc = sumOfNaturalPowers(levelNum, yData, xData)
+    # print yData
+    # print numpy.min(yData)
     lsq_results = least_squares(optimizeFunc,
                                  tuple(guesses),
                                  bounds=(tuple(lowerBounds), tuple(upperBounds)))
@@ -197,17 +225,19 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
     else:
         sortedFittedAmpTau = None
         cost = float('inf')
-
-
     return sortedFittedAmpTau, cost, plotDict
 
 
-
-
-
-def pulsePipeline(pulseDict, plotDict, conv_channels, trimBeforeMin, numOfExponents=1, upperBoundAmp=float('inf')):
+def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, conv_channels=1, trimBeforeMin=True, numOfExponents=1, upperBoundAmp=float('inf')):
     arrayData = pulseDict['arrayData']
     xData = pulseDict['xData']
+
+    # Remove Outliers from this data
+    if multiplesOfMedianStdForRejection is not None:
+        arrayData, removalMask \
+            = removeOutliers(arrayData, multiplesOfMedianStdForRejection=multiplesOfMedianStdForRejection)
+
+
     # Make x data, and send the raw data to the plot
     if plotDict['doShow']:
         plotDict = appendToTestPlots(plotDict,
@@ -282,13 +312,10 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
                      pulseDataTypesToExtract=[],
                      skipRows=1, delimiter=',',
                      trimBeforeMin=True,
+                     multiplesOfMedianStdForRejection=None,
                      conv_channels=1,
                      numOfExponents=1,
                      upperBoundAmp=float('inf'),
-                     pulseDataTypesToSave=[],
-                     outPutFileBase='trimmedData.csv',
-                     saveAsColumns=True,
-                     maxDataArraysPerFile=100,
                      showTestPlots_Pulses=False,
                      testModeReadIn=False,
                      verbose=True):
@@ -316,9 +343,7 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
     columnNamesToIgnore.append('xData'.lower())
 
     # initialize the dictionary to extract data from processed pulses
-    extractedDataDict = {}
-    for pulseDataType in pulseDataTypesToExtract:
-        extractedDataDict[pulseDataType] = []
+    listOfPulseDicts = []
 
 
     for IDindex in range(numOfDataDicts):
@@ -349,34 +374,18 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
             pulseDict['rawDataFileName'] = tableDict['fileName']
 
             # process the pulse
-            pulseDict, plotDict = pulsePipeline(pulseDict, plotDict, conv_channels, trimBeforeMin,
+            pulseDict, plotDict = pulsePipeline(pulseDict, plotDict,
+                                                multiplesOfMedianStdForRejection,
+                                                conv_channels, trimBeforeMin,
                                                 numOfExponents, upperBoundAmp)
+            listOfPulseDicts.append(pulseDict)
 
-            # extract the required data types for output
-            removeFlag = False
-            for pulseDataType in pulseDataTypesToExtract:
-                # if a data type is None we flag to remove this pulse before it get in with the rest of the data
-                if pulseDict[pulseDataType] is None:
-                    removeFlag = True
-            if not removeFlag:
-                for pulseDataType in pulseDataTypesToExtract:
-                    extractedDataDict[pulseDataType].append(pulseDict[pulseDataType])
         if showTestPlots_Pulses:
-            quickPlotter(plotDict=plotDict)
+            quickPlotter(plotDict  = plotDict)
 
         if verbose:
             if IDindex % modLen == 0:
                 print "Pulse operations are " \
-                      + str('%02.2f' % (IDindex*100.0/float(numOfDataDicts))) + " % complete."
-    # Change the data from a lists to arrays
-    for pulseDataType in extractedDataDict.keys():
-        extractedDataDict[pulseDataType] = numpy.array(extractedDataDict[pulseDataType])
+                      + str('%02.2f' % (IDindex * 100.0 / float(numOfDataDicts))) + " % complete."
 
-    for saveDataType in pulseDataTypesToSave:
-        listOfHeaderNames = extractedDataDict['uniqueID']
-        listOfDataArrays = extractedDataDict[saveDataType]
-        fileBaseName = outPutFileBase + '_' + saveDataType
-        saveProcessedData(listOfHeaderNames, listOfDataArrays, fileBaseName,
-                          maxDataArraysPerFile=maxDataArraysPerFile, delimiter=delimiter,
-                          saveAsColumns=saveAsColumns, verbose=verbose)
-    return extractedDataDict
+    return listOfPulseDicts

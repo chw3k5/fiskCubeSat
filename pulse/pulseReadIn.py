@@ -1,38 +1,74 @@
 import string, numpy, os, glob
 from operator import itemgetter
 
-from dataGetter import getTableData
+from dataGetter import getTableData, getTableRowData
 
 
-def getOutPutFiles(fileBase):
-    count = 1
-    fileName = fileBase + str(count) + '.txt'
-    fileNames = []
-    while os.path.isfile(fileName):
-        fileNames.append(fileName)
-        count += 1
-        fileName = fileBase + str(count) + '.txt'
+def getOutPutFiles(fileBase, isCSV=False, isSeries=True):
+    if isCSV:
+        fileSuffix = '.csv'
+    else:
+        fileSuffix = '.txt'
+    if isSeries:
+        count = 1
+        fileName = fileBase + str(count) + fileSuffix
+        fileNames = []
+        while os.path.isfile(fileName):
+            fileNames.append(fileName)
+            count += 1
+            fileName = fileBase + str(count) + fileSuffix
+    else:
+        fileName = fileBase + fileSuffix
+        fileNames = [fileName]
     return fileNames
 
 
-def deleteOutputFiles(fileBase):
-    for fileName in getOutPutFiles(fileBase):
+def deleteOutputFiles(fileBase, isCSV=False, isSeries=True):
+    for fileName in getOutPutFiles(fileBase, isCSV, isSeries):
         os.remove(fileName)
     return
 
 
-def getNextOutputFile(fileBase):
-    count = 1
-    fileName = fileBase + str(count) + '.txt'
-    while os.path.isfile(fileName):
-        count +=1
-        fileName = fileBase + str(count) + '.txt'
+def getNextOutputFile(fileBase, isCSV=False, isSeries=True):
+    if isCSV:
+        fileSuffix = '.csv'
+    else:
+        fileSuffix = '.txt'
+    if isSeries:
+        count = 1
+        fileName = fileBase + str(count) + fileSuffix
+        while os.path.isfile(fileName):
+            count += 1
+            fileName = fileBase + str(count) + fileSuffix
+    else:
+        fileName = fileBase + fileSuffix
     return fileName
+
+
+def readInSavedRowData(fileName, pulseDataType, listOfPulseDicts=[]):
+    # create the uniqueID list from list of existing pulse dictionaries.
+    uniqueIDList = []
+    for pulseDict in listOfPulseDicts:
+        uniqueIDList.append(pulseDict['uniqueID'])
+    # read-in and get the data table to assign to pulse dictionaries.
+    tableDict = getTableRowData(fileName)
+    # test to make sure is this data can be mapped to an existing pulse dictionary
+    IDsThisTable = tableDict.keys()
+    for testID in IDsThisTable:
+        if testID in uniqueIDList:
+            # This is the case where the uniqueID corresponds to an existing pulse dictionary
+            listIndex = uniqueIDList.index(testID)
+            pulseDict = listOfPulseDicts[listIndex]
+            pulseDict[pulseDataType] = tableDict[testID]
+        else:
+            uniqueIDList.append(testID)
+            listOfPulseDicts.append({'uniqueID':testID, pulseDataType:tableDict[testID]})
+    return listOfPulseDicts
 
 
 def loadPulses(folderName, fileNamePrefix='', filenameSuffix='',
                skipRows=1, delimiter=',', testMode=False, verbose=True):
-    searchString = fileNamePrefix +  "*" + filenameSuffix
+    searchString = fileNamePrefix + "*" + filenameSuffix
     if verbose:
         print "\nLoading data from the folder " + folderName + "."
         print "Using '" + searchString + "' as the search sting.\n"
@@ -70,19 +106,24 @@ def loadPulses(folderName, fileNamePrefix='', filenameSuffix='',
 
 def saveProcessedData(listOfHeaderNames, listOfArrays, outPutFileBase,
                       maxDataArraysPerFile=20, delimiter=',',
-                      saveAsColumns=False, verbose=False):
+                      saveAsColumns=False, appendMode=False, verbose=False):
     # save the trimmed data
+    if not appendMode:
+        if verbose:
+            print "\nDeleting old output files..."
+        deleteOutputFiles(fileBase=outPutFileBase)
     if verbose:
-        print "\nDeleting old output files..."
-    deleteOutputFiles(fileBase=outPutFileBase)
-    if verbose:
-        print "\nSaving data in one file named " + outPutFileBase + ".\n"
+        print "\nSaving data a file named " + outPutFileBase + ".\n"
     numOfHeaders = len(listOfHeaderNames)
     numberOfOutputFiles = int(numpy.ceil(float(numOfHeaders) / float(maxDataArraysPerFile)))
 
+
     listOfLengths = []
     for (arrayIndex, dataArray) in list(enumerate(listOfArrays)):
-        listOfLengths.append(len(dataArray))
+        try:
+            listOfLengths.append(len(dataArray))
+        except TypeError:
+            listOfLengths.append(1)
 
     if saveAsColumns:
         # minLength = numpy.min(listOfLengths)
@@ -92,7 +133,7 @@ def saveProcessedData(listOfHeaderNames, listOfArrays, outPutFileBase,
             endIndex = min(((jobIndex + 1) * maxDataArraysPerFile, numOfHeaders))
             jobHeaderIndexes = range(startIndex, endIndex)
 
-            outputFileName = getNextOutputFile(outPutFileBase)
+            outputFileName = getNextOutputFile(outPutFileBase, isCSV = delimiter==',', isSeries = numberOfOutputFiles>1)
             outputFileHandle = open(outputFileName, 'w')
 
             headerString = ''
@@ -119,13 +160,18 @@ def saveProcessedData(listOfHeaderNames, listOfArrays, outPutFileBase,
             if verbose:
                 print "File writing is " + str('%02.2f' % ((jobIndex + 1)  * 100.0 / float(numberOfOutputFiles))) + " % complete."
     else:
-        outputFileName = getNextOutputFile(outPutFileBase)
-        outputFileHandle = open(outputFileName, 'w')
-        modLen = int(numOfHeaders / 200.0)
+        outputFileName = getNextOutputFile(outPutFileBase, isCSV=delimiter==',', isSeries=False)
+        if appendMode:
+            outputFileHandle = open(outputFileName, 'a')
+        else:
+            outputFileHandle = open(outputFileName, 'w')
+        modLen = max((int(numOfHeaders / 200.0), 1))
         for (headerIndex, header) in list(enumerate(listOfHeaderNames)):
-            dataString = ""
-            for dataValue in listOfArrays[headerIndex]:
-                dataString += delimiter + str(dataValue)
+            data = listOfArrays[headerIndex]
+            try:
+                dataString = delimiter + str(data).replace(' ', '').replace(',', delimiter)[1:-1]
+            except TypeError:
+                dataString = delimiter + str(data)
             outputFileHandle.write(str(header) + dataString + '\n')
             if verbose:
                 if headerIndex % modLen == 0:

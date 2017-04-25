@@ -16,4 +16,21 @@ def getTableData(filename, skiprows=1, delimiter=','):
         tableDict[columnName] = tableData[:,n]
     return tableDict
 
+def getTableRowData(filename, delimiter=','):
+    tableDict = {}
+    f = open(filename, 'r')
+    for line in f:
+        rowInfo = line.split(delimiter)
+        rowHeader = rowInfo[0].strip()
+        rowDataList = [float(datum) for datum in rowInfo[1:]]
+        dataSize = len(rowDataList)
+        if dataSize > 1:
+            tableDict[rowHeader] = numpy.array(rowDataList)
+        elif dataSize == 1:
+            tableDict[rowHeader] = rowDataList[0]
+        else:
+            tableDict[rowHeader] = None
+    f.close()
+
+    return tableDict
 
