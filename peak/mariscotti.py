@@ -105,12 +105,12 @@
 import numpy
 from smoothing import boxCar
 from quickPlots import quickPlotter, rescale
+from operator import itemgetter
 
 
 def mariscotti(y, **kwargs):
 
     keys = kwargs.keys()
-    print keys
     y = numpy.array(y)
 
     # defaults
@@ -216,7 +216,7 @@ def mariscotti(y, **kwargs):
             quickPlotter(plotDict=plotDict)
         if verbose:
             print "Mariscotti algorithm completed.\n"
-        return None
+        return []
 
     # defined the outputs
     gaussParameters = []
@@ -359,6 +359,33 @@ def mariscotti(y, **kwargs):
         if verbose:
             print "Mariscotti algorithm completed.\n"
         return gaussParametersArray
+
+
+def peakFinder(spectrum,
+               x,
+               numberOfIndexesToSmoothOver=1,
+               errFactor=1,
+               showPlot_peakFinder=False,
+               verbose=True):
+    # apply the mariscotti peak finding algorithm
+    gaussParametersArray = numpy.array(mariscotti(spectrum, nsmooth=numberOfIndexesToSmoothOver,
+                                                  errFactor=errFactor, plot=showPlot_peakFinder, verbose=verbose))
+
+    # apply some simple offset so that this can work with energy units or channel numbers.
+    if len(gaussParametersArray) == 0:
+        return []
+    else:
+        energyOffset = float(x[0])
+        energySpacing = (float(x[-1]) - float(x[0]))/float(len(x) - 1)
+        gaussParametersArray_absouleUnits = gaussParametersArray
+        gaussParametersArray_absouleUnits[:,1] = gaussParametersArray[:,1] + energyOffset
+        gaussParametersArray_absouleUnits[:,2] = gaussParametersArray[:,2] * energySpacing
+
+        # Sort the peaks from highest to lowest and put them in a list
+        guessParametersSet = sorted(gaussParametersArray_absouleUnits, key=itemgetter(0), reverse=True)
+        return guessParametersSet
+
+
 
 
 if __name__ == '__main__':

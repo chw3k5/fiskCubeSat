@@ -2,7 +2,7 @@ __author__ = 'chw3k5'
 import numpy, copy
 from operator import itemgetter
 from scipy.optimize import curve_fit
-from mariscotti import mariscotti
+from mariscotti import mariscotti, peakFinder
 from quickPlots import quickPlotter
 from dataGetter import getTableData
 
@@ -45,18 +45,11 @@ def listGaussFitter(spectrum, x,
                     errFactor=1, numberOfIndexesToSmoothOver=1, showPlot_peakFinder=False,
                     showPlot_gaussFitters=False, verbose=False):
     # apply the mariscotti peak finding algorithm
-    gaussParametersArray = numpy.array(mariscotti(spectrum, nsmooth=numberOfIndexesToSmoothOver,
-                                                  errFactor=errFactor, plot=showPlot_peakFinder, verbose=verbose))
-
-    # apply some simple offset so that this can work with energy units or channel numbers.
-    energyOffset = float(x[0])
-    energySpacing = (float(x[-1]) - float(x[0]))/float(len(x) - 1)
-    gaussParametersArray_absouleUnits = gaussParametersArray
-    gaussParametersArray_absouleUnits[:,1] = gaussParametersArray[:,1] + energyOffset
-    gaussParametersArray_absouleUnits[:,2] = gaussParametersArray[:,2] * energySpacing
-
-    # Sort the peaks from highest to lowest and put them in a list
-    guessParametersSet = sorted(gaussParametersArray_absouleUnits, key=itemgetter(0), reverse=True)
+    guessParametersSet = peakFinder(spectrum, x,
+                                    numberOfIndexesToSmoothOver=numberOfIndexesToSmoothOver,
+                                    errFactor=errFactor,
+                                    showPlot_peakFinder=showPlot_peakFinder,
+                                    verbose=verbose)
 
     # piloting initialization and defaults
     if showPlot_gaussFitters:
@@ -83,7 +76,6 @@ def listGaussFitter(spectrum, x,
         plotDict['legendNumPoints'] = 3
         plotDict['legendHandleLength'] = 5
         plotDict['clearAtTheEnd'] = False
-
 
         # append the plot values for the raw spectrum
         plotDict['yData'].append(spectrum[:])
@@ -162,7 +154,6 @@ def deconvolveGaussFitter():
 
 
 if __name__ == '__main__':
-
     # A few options for this data
     endIndex = 100
     verbose = True

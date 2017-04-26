@@ -99,7 +99,7 @@ def loadPulses(folderName, fileNamePrefix='', filenameSuffix='',
         tableDict['fileName'] = fileName
         tableDict['uniqueID'] = uniqueID
         listOfDataDicts.append(tableDict)
-        if (testMode and (IDindex == 9)):
+        if (testMode and (IDindex == 12)):
             break
     return listOfDataDicts
 
@@ -168,10 +168,11 @@ def saveProcessedData(listOfHeaderNames, listOfArrays, outPutFileBase,
         modLen = max((int(numOfHeaders / 200.0), 1))
         for (headerIndex, header) in list(enumerate(listOfHeaderNames)):
             data = listOfArrays[headerIndex]
-            try:
-                dataString = delimiter + str(data).replace(' ', '').replace(',', delimiter)[1:-1]
-            except TypeError:
+            if type(data) is numpy.float64:
                 dataString = delimiter + str(data)
+            else:
+                dataString = delimiter + str(data).replace(' ', '').replace(',', delimiter)[1:-1]
+
             outputFileHandle.write(str(header) + dataString + '\n')
             if verbose:
                 if headerIndex % modLen == 0:

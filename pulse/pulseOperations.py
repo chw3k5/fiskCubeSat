@@ -309,7 +309,6 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
 
 def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
                      columnNamesToIgnore=['time'],
-                     pulseDataTypesToExtract=[],
                      skipRows=1, delimiter=',',
                      trimBeforeMin=True,
                      multiplesOfMedianStdForRejection=None,
@@ -319,8 +318,6 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
                      showTestPlots_Pulses=False,
                      testModeReadIn=False,
                      verbose=True):
-    if 'uniqueID' not in pulseDataTypesToExtract:
-        pulseDataTypesToExtract.append('uniqueID')
 
     listOfDataDicts = loadPulses(folderName,
                                  fileNamePrefix=fileNamePrefix,

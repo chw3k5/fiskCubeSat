@@ -1,4 +1,5 @@
-import string, numpy
+import string
+import numpy
 
 
 def getTableData(filename, skiprows=1, delimiter=','):
@@ -8,13 +9,12 @@ def getTableData(filename, skiprows=1, delimiter=','):
     columnNames = string.split(firstLine.strip(), delimiter)
 
     f.close()
-
     tableData = numpy.loadtxt(filename, skiprows=skiprows, delimiter=delimiter)
-
     tableDict = {}
     for (n, columnName) in list(enumerate(columnNames)):
         tableDict[columnName] = tableData[:,n]
     return tableDict
+
 
 def getTableRowData(filename, delimiter=','):
     tableDict = {}
@@ -31,6 +31,5 @@ def getTableRowData(filename, delimiter=','):
         else:
             tableDict[rowHeader] = None
     f.close()
-
     return tableDict
 
