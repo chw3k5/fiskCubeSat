@@ -272,7 +272,12 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
     if trimBeforeMin:
         keptData, keptXData = trimToMin(arrayData, smoothedData, xData)
         pulseDict['keptData'] = keptData
-        pulseDict['keptXData'] = keptXData
+        keptLen = len(keptXData)
+        xStep = keptXData[1] - keptXData[0]
+        pulseDict['keptLen'] = keptLen
+        pulseDict['keptXData'] = (numpy.arange(keptLen, dtype='float64') * xStep) + keptXData[0]
+        pulseDict['deltaX'] = pulseDict['keptXData'][-1] - pulseDict['keptXData'][0]
+
         if plotDict['doShow']:
             plotDict = appendToTestPlots(plotDict,
                                          keptData,

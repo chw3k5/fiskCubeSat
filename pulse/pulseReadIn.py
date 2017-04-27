@@ -170,8 +170,12 @@ def saveProcessedData(listOfHeaderNames, listOfArrays, outPutFileBase,
             data = listOfArrays[headerIndex]
             if type(data) is numpy.float64:
                 dataString = delimiter + str(data)
+            elif type(data) in [list, numpy.ndarray]:
+                dataString = ''
+                for datum in data:
+                    dataString += delimiter + str(datum)
             else:
-                dataString = delimiter + str(data).replace(' ', '').replace(',', delimiter)[1:-1]
+                dataString = delimiter + str(data).replace(' ', '').replace(',', delimiter)
 
             outputFileHandle.write(str(header) + dataString + '\n')
             if verbose:

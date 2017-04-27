@@ -269,7 +269,7 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
         hatch = ''
         xlabel_str = ''
         if key == 'integral':
-            xlabel_str += "Integral"
+            xlabel_str += "Integral V * s"
             color = 'dodgerblue'
             hatch = '/'
         elif key == 'fittedCost':

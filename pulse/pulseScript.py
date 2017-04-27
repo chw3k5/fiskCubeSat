@@ -3,18 +3,16 @@ import getpass
 
 
 
-
-
 from pulse.pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOfPulses, removeOutlierPulses,\
-    makeGroupHistograms, doFindHistPeaks
+    makeGroupHistograms, doFindHistPeaks, filterPulsesForGroups, makeCharacteristicFunction, saveProcessedData
 
 if __name__ == '__main__':
-    preformStep1 = True
+    preformStep1 = False
     preformStep2 = True
     preformStep3 = True
     preformStep4 = True
-    preformStep5 = False
-
+    preformStep5 = False # not working
+    preformStep6 = True
     """
     Default is True. If 'False' the code will run without text output unless something unexpected happens.
     the definition of the word verbose (adjective) is 'using or expressed in more words than are needed.'
@@ -29,12 +27,12 @@ if __name__ == '__main__':
     """
     Process all and save the results for all pulse data in folders in folderList
     """
-    folderList = [
-        'CHC alpha_gamma traces']
-    # folderList = ['CHC alpha traces',
-    #               'CHC alpha traces thrsh 180',
-    #               'CHC alpha_gamma traces',
-    #               'CHC gamma traces']
+    # folderList = [
+    #     'CHC alpha_gamma traces']
+    folderList = ['CHC alpha traces',
+                  'CHC alpha traces thrsh 180',
+                  'CHC alpha_gamma traces',
+                  'CHC gamma traces']
 
     """
     This is the location where the folders with pulse data should be stored on your computer.
@@ -65,7 +63,7 @@ if __name__ == '__main__':
     This option lets you apply a box car convolution to smooth the pulse data before is it trimmed to the peak.
     smooth smoothChannels=1 DOES NOT apply a convolution and is the default
     """
-    smoothChannels=1,
+    smoothChannels = 1
 
 
     """
@@ -102,7 +100,7 @@ if __name__ == '__main__':
     'fittedTau4', only available if numOfExponents >= 4
 
     """
-    pulseDataTypesToSave = ['integral', 'fittedCost']
+    pulseDataTypesToSave = ['integral', 'fittedCost', 'rawDataFileName', 'deltaX', 'keptData']
     for index in range(numOfExponents):
         pulseDataTypesToSave.extend(['fittedAmp' + str(index + 1), 'fittedTau' + str(index + 1)])
     if verbose:
@@ -174,7 +172,8 @@ if __name__ == '__main__':
     """
     pulseDataTypesToRemoveOutliers = [('integral', float(100)), ('fittedCost', float(4)),
                                       ('fittedAmp1', float(10)), ('fittedTau1', float(10)),
-                                      ('fittedAmp2', float(10)), ('fittedTau2', float(10))]
+                                      ('fittedAmp2', float(10)), ('fittedTau2', float(10)),
+                                      ('deltaX', float(10))]
 
     if preformStep3:
         if preformStep2:
@@ -195,8 +194,6 @@ if __name__ == '__main__':
     In this step we make histograms for the data types that are one value per pulse. This can help us to make
     choices about what the characteristic values for sets of pulses.
     """
-
-
 
     """
     pulseDataForHistogram, is list of the data type that are to be made into histograms.
@@ -226,7 +223,7 @@ if __name__ == '__main__':
     """
     saveHistPlots toggles is the histogram plots save it the folder 'plotFolder'.
     """
-    saveHistPlots = False
+    saveHistPlots = True
 
 
     """
@@ -239,8 +236,9 @@ if __name__ == '__main__':
             if verbose:
                 print 'Making histograms of the pulse data.'
             outHistDict = makeGroupHistograms(groupDict,
-                                              pulseDataTypesToSave,
+                                              pulseDataForHistogram,
                                               plotFolder,
+                                              histBins=histBins,
                                               saveHistPlots=saveHistPlots,
                                               showHistPlots=showHistPlots,
                                               verbose=verbose)
@@ -248,12 +246,87 @@ if __name__ == '__main__':
             print "The data needs to be loaded in step 2 before step 3 can be completed. Try again."
 
 
-
-
-
-
+    ####################
+    ####################
+    ###### Step Under Constructions ######
+    ####################
+    ####################
     if False:
         # Disabled for not Not working as well enough for prime time.
         errFactorForPeakFinder = 0
         smoothIndexesForPeakFinder = 1
         doFindHistPeaks(outHistDict, errFactorForPeakFinder, smoothIndexesForPeakFinder, verbose)
+
+
+
+    ####################
+    ####################
+    ###### Step 5 ######
+    ####################
+    ####################
+    """
+    Filter the data based on one of the data types.
+    pulseFilterDict is a dictionary for which each element is a list of tuples. {} denotes a dictionary.
+    The keys of this dictionary must be the elements of folder list.
+    These are the same keys that are use to access the lists of pulses for the dictionary
+
+    The '[]' designate it a list. Each component tuple,
+    ('pulseType', filterMin, filterMax) where 'pulseType' where is a string, filterMin is a float, and
+    filterMax is a float. Separate the Tuples with a ','
+    """
+    pulseFilterDict = {}
+    pulseFilterDict['CHC alpha traces'] = [('integral', float(-6.0e-8), float(-3.0e-8))]
+    pulseFilterDict['CHC gamma traces'] = [('integral', float(-7.4e-8), float(-6.6e-3))]
+
+    if preformStep5:
+        groupDict = filterPulsesForGroups(groupDict, pulseFilterDict)
+
+
+
+    ####################
+    ####################
+    ###### Step 6 ######
+    ####################
+    ####################
+    """
+    Make a histogram for the filtered Pulses
+    """
+    if preformStep6:
+        if preformStep2:
+            if verbose:
+                print 'Making histograms of the pulse data.'
+            outHistDict = makeGroupHistograms(groupDict,
+                                              pulseDataForHistogram,
+                                              plotFolder,
+                                              histBins=histBins,
+                                              saveHistPlots=saveHistPlots,
+                                              showHistPlots=showHistPlots,
+                                              verbose=verbose)
+
+
+    ####################
+    ####################
+    ###### Step 7 ######
+    ####################
+    ####################
+    """
+    Make and characteristic function for the remaining pulses in the group.
+    """
+    characteristicFunctionFolders = pulseFilterDict.keys()
+    groupDict = makeCharacteristicFunction(groupDict, characteristicFunctionFolders, outputFolder, verbose=verbose)
+
+
+    ####################
+    ####################
+    ###### Step 8 ######
+    ####################
+    ####################
+
+
+    # load the characteristic functions. And test the SI on the alpha_gamma data.
+
+
+
+
+
+

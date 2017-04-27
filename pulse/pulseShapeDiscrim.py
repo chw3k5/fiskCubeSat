@@ -76,10 +76,7 @@ class pulseGroup():
             if not removeFlag:
                 for pulseDataType in pulseDataTypesToExtract:
                     datum = pulseDict[pulseDataType]
-                    try:
-                        self.outputDict[pulseDataType].append(float(datum))
-                    except ValueError:
-                        self.outputDict[pulseDataType].append(datum)
+                    self.outputDict[pulseDataType].append(datum)
 
         # Change the data from a lists to arrays
         for pulseDataType in self.outputDict.keys():
@@ -111,8 +108,44 @@ class pulseGroup():
         self.listOfPulseDicts = newListOfPulsesDicts
 
 
-    def findGroupPeaks(self):
-        pass
+    def filterPulses(self, pulseDataTypesForFilter):
+        for (pulseType, minVal, maxVal) in pulseDataTypesForFilter:
+            if maxVal < minVal:
+                junk = maxVal
+                maxVal = minVal
+                minVal = junk
+            newListOfPulsesDicts = []
+            for pulseDict in self.listOfPulseDicts:
+                valueToFilter = pulseDict[pulseType]
+                if ((minVal <= valueToFilter), (valueToFilter <= maxVal)):
+                    newListOfPulsesDicts.append(pulseDict)
+            self.listOfPulseDicts = newListOfPulsesDicts
+
+
+    def calcMinLen(self):
+        deltaXlist = []
+        lenList = []
+        for pulseDict in self.listOfPulseDicts:
+            lenList.append(pulseDict['deltaXIndex'])
+            deltaXlist.append(pulseDict['deltaX'])
+        self.minLen = numpy.min(lenList)
+        self.deltaXlist = numpy.min(deltaXlist)
+
+
+    def calcCharPulse(self):
+        self.calcMinLen()
+        numOfPulses = len(self.listOfPulseDicts)
+        arrayOfAllPulses = numpy.zeros((self.minLen, numOfPulses))
+        for (pulseIndex, pulseDict) in list(enumerate(self.listOfPulseDicts)):
+            arrayOfAllPulses[:, pulseIndex] = pulseDict['keptData'][:self.minLen]
+
+        self.charPulse = numpy.mean(arrayOfAllPulses, axis=1)
+        print self.minLen, len(self.charPulse)
+
+
+
+
+
 
 
 
@@ -180,6 +213,7 @@ def removeOutlierPulses(groupDict, pulseDataTypesToRemoveOutliers):
 def makeGroupHistograms(groupDict,
                         pulseDataForHistogram,
                         plotFolder,
+                        histBins=10,
                         saveHistPlots=False,
                         showHistPlots=False,
                         verbose=True):
@@ -250,6 +284,20 @@ def doFindHistPeaks(outHistDict, errFactor, smoothIndexesForPeakFinder,  verbose
     return
 
 
+def filterPulsesForGroups(groupDict, pulseFilterDict):
+    dictKeys = pulseFilterDict.keys()
+    for key in dictKeys:
+        groupDict[key].filterPulses(pulseFilterDict[key])
+    return groupDict
 
+
+def makeCharacteristicFunction(groupDict, characteristicFunctionFolders, outputFolder, verbose=True):
+    for folderName in characteristicFunctionFolders:
+        groupDict[folderName].calcCharPulse()
+        outPutFileBase = os.path.join(outputFolder, folderName)
+        saveProcessedData(['charFunction'], [groupDict[folderName].charPulse], outPutFileBase,
+                          maxDataArraysPerFile=int('inf'), delimiter=',',
+                          saveAsColumns=False, appendMode=False, verbose=verbose)
+    return groupDict
 
 
