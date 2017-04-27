@@ -199,6 +199,7 @@ def quickPlotter(plotDict):
 
     if extractPlotVal(plotDict, 'clearAtTheEnd', keys=keys):
         plt.clf()
+        plt.close()
     if verbose:
         print '...the quick plotting program has finished.'
     return

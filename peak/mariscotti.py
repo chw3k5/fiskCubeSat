@@ -378,7 +378,8 @@ def peakFinder(spectrum,
         energyOffset = float(x[0])
         energySpacing = (float(x[-1]) - float(x[0]))/float(len(x) - 1)
         gaussParametersArray_absouleUnits = gaussParametersArray
-        gaussParametersArray_absouleUnits[:,1] = gaussParametersArray[:,1] + energyOffset
+        for (valIndex, meanVal) in list(enumerate(gaussParametersArray[:,1])):
+            gaussParametersArray_absouleUnits[valIndex,1] = x[int(meanVal)]
         gaussParametersArray_absouleUnits[:,2] = gaussParametersArray[:,2] * energySpacing
 
         # Sort the peaks from highest to lowest and put them in a list

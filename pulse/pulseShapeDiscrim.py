@@ -86,7 +86,7 @@ class pulseGroup():
             self.outputDict[pulseDataType] = numpy.array(self.outputDict[pulseDataType])
 
 
-    def saveOutputDict(self, outPutFileBase, saveDataType,
+    def saveOutputDict(self, outPutFileBase, pulseDataTypesToSave,
                        maxDataArraysPerFile=100, delimiter=',',
                        saveAsColumns=False, verbose=True):
         if 'uniqueID' in pulseDataTypesToSave:
@@ -118,56 +118,15 @@ class pulseGroup():
 
 
 
-# folderList = [
-#     'CHC alpha_gamma traces']
-folderList = ['CHC alpha traces',
-              'CHC alpha traces thrsh 180',
-              'CHC alpha_gamma traces',
-              'CHC gamma traces']
-numOfExponents = 2
-# pulseDataForHistogram = ['integral', 'fittedCost']
-# for index in range(numOfExponents):
-#     pulseDataForHistogram.extend(['fittedAmp' + str(index + 1), 'fittedTau' + str(index + 1)]) # this turn into keys for a dictionary that extractPulseInfo Outputs
-#
-# pulseDataTypesToRemoveOutliers = [('fittedCost', float(5)), ('integral', float(20)),
-#                                   ('fittedAmp1', float(20)), ('fittedTau1', float(20)),
-#                                   ('fittedAmp2', float(20)), ('fittedTau2', float(20)),
-#                                   ('fittedAmp3', float(20)), ('fittedTau3', float(20)),
-#                                   ('fittedAmp4', float(20)), ('fittedTau4', float(20))]
-pulseDataTypesToRemoveOutliers = [('integral', float(100)), ('fittedCost', float(4)),
-                                  ('fittedAmp1', float(100)), ('fittedTau1', float(100)),
-                                  ('fittedAmp2', float(100)), ('fittedTau2', float(100))]
-pulseDataTypesToSave = ['integral', 'fittedCost', 'fittedAmp1', 'fittedTau1', 'fittedAmp2', 'fittedTau2']
 
 
 
-showTestPlots_Pulses = False
-showHistPlots = False
-showPeakFinderPlot = False
-saveHistPlots = True
-histBins = 60
-
-errFactorForPeakFinder = 1
-
-testModeReadIn = False
-verbose = True
-
-if getpass.getuser() == "chw3k5": # Caleb Wheeler's User name on his own computer
-    parentFolder = '/Users/chw3k5/Desktop/new CHC traces'
-else:
-    parentFolder = ''
-
-
-plotFolder = os.path.join(parentFolder, 'plots')
-if not os.path.exists(plotFolder):
-    os.mkdir(plotFolder)
-
-outputFolder = os.path.join(parentFolder, 'output')
-if not os.path.exists(outputFolder):
-    os.mkdir(outputFolder)
-
-
-def doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataTypesToSave):
+def doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataTypesToSave,
+                              smoothChannels=1,
+                              numOfExponents=2,
+                              showTestPlots_Pulses=False,
+                              testModeReadIn=False,
+                              verbose=True):
     groupDict = {}
     for singleFolder in folderList:
         folderName = os.path.join(parentFolder, singleFolder)
@@ -180,7 +139,7 @@ def doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataT
                                               delimiter='\t',
                                               trimBeforeMin=True,
                                               multiplesOfMedianStdForRejection=1000.0, # None or float, None means no rejection
-                                              conv_channels=1,
+                                              conv_channels=smoothChannels,
                                               numOfExponents=numOfExponents,
                                               upperBoundAmp=float(1000),
                                               showTestPlots_Pulses=showTestPlots_Pulses,
@@ -190,19 +149,22 @@ def doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataT
         outPutFileBase = os.path.join(outputFolder, singleFolder)
         if pulseDataTypesToSave != []:
             groupDict[singleFolder].makeOutputDict(pulseDataTypesToSave)
-            for saveDataType in pulseDataTypesToSave:
-                groupDict[singleFolder].saveOutputDict(outPutFileBase=outPutFileBase, saveDataType=saveDataType,
-                                                       maxDataArraysPerFile=100, delimiter=',',
-                                                       saveAsColumns=False, verbose=verbose)
+
+            groupDict[singleFolder].saveOutputDict(outPutFileBase=outPutFileBase,
+                                                   pulseDataTypesToSave=pulseDataTypesToSave,
+                                                   maxDataArraysPerFile=100,
+                                                   delimiter=',',
+                                                   saveAsColumns=False,
+                                                   verbose=verbose)
     return groupDict
 
 
-def loadSavedGroupsOfPulses(outputFolder, folderList, pulseDataTypesToSave):
+def loadSavedGroupsOfPulses(outputFolder, folderList, pulseDataTypesToLoad):
     groupDict = {}
     for singleFolder in folderList:
         groupDict[singleFolder] = pulseGroup()
         groupDict[singleFolder].getSavedPulses(outputFolder,
-                                               pulseDataTypes=pulseDataTypesToSave,
+                                               pulseDataTypes=pulseDataTypesToLoad,
                                                fileNamePrefix=singleFolder + '_')
     return groupDict
 
@@ -216,7 +178,11 @@ def removeOutlierPulses(groupDict, pulseDataTypesToRemoveOutliers):
 
 
 def makeGroupHistograms(groupDict,
-                        pulseDataForHistogram):
+                        pulseDataForHistogram,
+                        plotFolder,
+                        saveHistPlots=False,
+                        showHistPlots=False,
+                        verbose=True):
     folderList = groupDict.keys()
     outHistDict = {}
     for singleFolder in folderList:
@@ -243,9 +209,9 @@ def makeGroupHistograms(groupDict,
     return outHistDict
 
 
-def doFindHistPeaks(outHistDict, errFactor, verbose):
+def doFindHistPeaks(outHistDict, errFactor, smoothIndexesForPeakFinder,  verbose):
     doShow = True
-    folderList = groupDict.keys()
+    folderList = outHistDict.keys()
     for singleFolder in folderList:
         for key in outHistDict[singleFolder].keys():
             (hist, binCenters) = outHistDict[singleFolder][key]
@@ -262,9 +228,9 @@ def doFindHistPeaks(outHistDict, errFactor, verbose):
 
             guessParametersSet = peakFinder(hist,
                                             binCenters,
-                                            numberOfIndexesToSmoothOver=1,
+                                            numberOfIndexesToSmoothOver=smoothIndexesForPeakFinder,
                                             errFactor=errFactor,
-                                            showPlot_peakFinder=False,
+                                            showPlot_peakFinder=True,
                                             verbose=verbose)
 
 
@@ -285,10 +251,5 @@ def doFindHistPeaks(outHistDict, errFactor, verbose):
 
 
 
-if __name__ == '__main__':
-    # groupDict = doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataTypesToSave)
-    groupDict = loadSavedGroupsOfPulses(outputFolder, folderList, pulseDataTypesToSave)
-    groupDict = removeOutlierPulses(groupDict, pulseDataTypesToRemoveOutliers)
-    outHistDict = makeGroupHistograms(groupDict,
-                                   pulseDataTypesToSave)
-    doFindHistPeaks(outHistDict, errFactorForPeakFinder, verbose)
+
+

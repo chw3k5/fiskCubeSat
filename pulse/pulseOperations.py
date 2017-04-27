@@ -228,7 +228,8 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
     return sortedFittedAmpTau, cost, plotDict
 
 
-def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, conv_channels=1, trimBeforeMin=True, numOfExponents=1, upperBoundAmp=float('inf')):
+def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, conv_channels=1, trimBeforeMin=True,
+                  numOfExponents=1, upperBoundAmp=float('inf')):
     arrayData = pulseDict['arrayData']
     xData = pulseDict['xData']
 
