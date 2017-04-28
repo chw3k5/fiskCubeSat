@@ -6,12 +6,15 @@ from quickPlots import quickPlotter
 from pulseReadIn import loadPulses, saveProcessedData
 
 
-def initializeTestPlots(doShow, verbose):
+def initializeTestPlots(doShow, verbose, title=None):
     plotDict = {}
     plotDict['verbose'] = verbose
     # These must be a single value
-    plotDict['title'] = 'Single Pulse Calculations'
-    plotDict['xlabel'] = 'Time (us)'
+    if title is None:
+        plotDict['title'] = 'Single Pulse Calculations'
+    else:
+        plotDict['title'] = title
+    plotDict['xlabel'] = 'Time (S)'
     plotDict['ylabel'] = 'Voltage (V)'
     plotDict['legendAutoLabel'] = False
     plotDict['doLegend'] = True
@@ -275,7 +278,7 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
         keptLen = len(keptXData)
         xStep = keptXData[1] - keptXData[0]
         pulseDict['keptLen'] = keptLen
-        pulseDict['keptXData'] = (numpy.arange(keptLen, dtype='float64') * xStep) + keptXData[0]
+        pulseDict['keptXData'] = numpy.arange(0.0, keptLen * float(xStep), xStep)
         pulseDict['deltaX'] = pulseDict['keptXData'][-1] - pulseDict['keptXData'][0]
 
         if plotDict['doShow']:
@@ -311,6 +314,140 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
             pulseDict['fittedAmp' + str(index + 1)] = None
             pulseDict['fittedTau' + str(index + 1)] = None
     return pulseDict, plotDict
+
+
+def calcP_funcForSI(charArray1, charArray2,
+                    showTestPlot=False,
+                    useFittedFunction=True,
+                    xStep=1.0e-8,
+                    xTruncateAfter_s=float('inf'),
+                    numOfExponents=2,
+                    upperBoundAmp=float('inf'),
+                    verbose=True):
+    plotDict = initializeTestPlots(showTestPlot, verbose, title='Characteristic Functions')
+    # Calculations for Characteristic Function 2
+    char1Len = len(charArray1)
+    dateLen1_s = char1Len * float(xStep)
+    if dateLen1_s > xTruncateAfter_s:
+        char1Len = int(numpy.round(xTruncateAfter_s / float(xStep)))
+    charPulseDict1 = {'keptData':numpy.array(charArray1[:char1Len]), 'keptXData':numpy.arange(0.0, char1Len * float(xStep), xStep)}
+    plotDict = appendToTestPlots(plotDict,
+                                         charPulseDict1['keptData'],
+                                         charPulseDict1['keptXData'],
+                                         legendLabel='Function 1',
+                                         fmt='None',
+                                         markersize=4,
+                                         alpha=1.0,
+                                         ls='solid',
+                                         lineWidth=1)
+
+    # fit with a sum of exponential
+    fittedAmpTau1, charPulseDict1['fittedCost'], junk \
+        = fittingSumOfPowers(charPulseDict1['keptData'], charPulseDict1['keptXData'], numOfExponents, plotDict, upperBoundAmp)
+    if fittedAmpTau1 is not None:
+        for (index, (amp, tau)) in list(enumerate(fittedAmpTau1)):
+            charPulseDict1['fittedAmp' + str(index + 1)] = amp
+            charPulseDict1['fittedTau' + str(index + 1)] = tau
+    else:
+        for index in range(numOfExponents):
+            charPulseDict1['fittedAmp' + str(index + 1)] = None
+            charPulseDict1['fittedTau' + str(index + 1)] = None
+
+    # Calculations for Characteristic Function 2
+    char2Len = len(charArray2)
+    dateLen2_s = char2Len * float(xStep)
+    if dateLen2_s > xTruncateAfter_s:
+        char2Len = int(numpy.round(xTruncateAfter_s / float(xStep)))
+    charPulseDict2 = {'keptData':numpy.array(charArray2[:char2Len]), 'keptXData':numpy.arange(0.0, char2Len * float(xStep), xStep)}
+    plotDict = appendToTestPlots(plotDict,
+                                         charPulseDict2['keptData'],
+                                         charPulseDict2['keptXData'],
+                                         legendLabel='Function 2',
+                                         fmt='None',
+                                         markersize=4,
+                                         alpha=1.0,
+                                         ls='solid',
+                                         lineWidth=1)
+
+    # fit with a sum of exponential
+    fittedAmpTau2, charPulseDict2['fittedCost'], junk \
+        = fittingSumOfPowers(charPulseDict2['keptData'], charPulseDict2['keptXData'], numOfExponents, plotDict, upperBoundAmp)
+    if fittedAmpTau2 is not None:
+        for (index, (amp, tau)) in list(enumerate(fittedAmpTau2)):
+            charPulseDict2['fittedAmp' + str(index + 1)] = amp
+            charPulseDict2['fittedTau' + str(index + 1)] = tau
+    else:
+        for index in range(numOfExponents):
+            charPulseDict2['fittedAmp' + str(index + 1)] = None
+            charPulseDict2['fittedTau' + str(index + 1)] = None
+
+
+    # replace the real-data average with a fitted function for the shaping indicator (SI) calculation
+    if useFittedFunction:
+        newArray = numpy.zeros((char1Len))
+        for sumIndex in range(numOfExponents):
+            newArray += naturalPower(charPulseDict1['keptXData'],
+                                     charPulseDict1['fittedAmp' + str(sumIndex + 1)],
+                                     charPulseDict1['fittedTau' + str(sumIndex + 1)])
+        charArray1 = newArray
+        # plotDict = appendToTestPlots(plotDict,
+        #                              charArray1,
+        #                              charPulseDict1['keptXData'],
+        #                              legendLabel='Level ' + str(numOfExponents) + ' Residuals, cost=' + str(charPulseDict1['fittedCost']),
+        #                              fmt='None',
+        #                              markersize=4,
+        #                              alpha=1.0,
+        #                              ls='dashed',
+        #                              lineWidth=1)
+
+        newArray = numpy.zeros((char2Len))
+        for sumIndex in range(numOfExponents):
+            newArray += naturalPower(charPulseDict2['keptXData'],
+                                     charPulseDict2['fittedAmp' + str(sumIndex + 1)],
+                                     charPulseDict2['fittedTau' + str(sumIndex + 1)])
+        charArray2 = newArray
+        # plotDict = appendToTestPlots(plotDict,
+        #                              charArray2,
+        #                              charPulseDict2['keptXData'],
+        #                              legendLabel='Level ' + str(numOfExponents) + ' Residuals, cost=' + str(charPulseDict2['fittedCost']),
+        #                              fmt='None',
+        #                              markersize=4,
+        #                              alpha=1.0,
+        #                              ls='dashed',
+        #                              lineWidth=1)
+
+    # Calculate the shaping indicator SI
+    minCharLen = numpy.min((char1Len, char2Len))
+    Pfunc = (charArray1[:minCharLen] - charArray2[:minCharLen]) / (charArray1[:minCharLen] + charArray2[:minCharLen])
+    plotDict = appendToTestPlots(plotDict,
+                                 Pfunc,
+                                 numpy.arange(0.0, minCharLen * float(xStep), xStep),
+                                     legendLabel='Calculated P(t)' ,
+                                     fmt='None',
+                                     markersize=4,
+                                     alpha=1.0,
+                                     ls='dotted',
+                                     lineWidth=2)
+    if showTestPlot:
+        quickPlotter(plotDict)
+
+    # calculate integrals
+    charPulseDict1['integral'], junk = calcIntegral(charPulseDict1['keptData'],
+                                                        charPulseDict1['keptXData'],
+                                                        plotDict)
+    charPulseDict2['integral'], junk = calcIntegral(charPulseDict2['keptData'],
+                                                        charPulseDict2['keptXData'],
+                                                        plotDict)
+    return Pfunc, charPulseDict1, charPulseDict2
+
+
+
+
+
+
+
+
+
 
 
 def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',

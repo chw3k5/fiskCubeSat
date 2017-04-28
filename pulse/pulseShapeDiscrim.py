@@ -4,10 +4,15 @@ import os
 from matplotlib import pyplot as plt
 
 from pulse.pulseReadIn import saveProcessedData, readInSavedRowData
-from pulse.pulseOperations import extractPulseInfo, removeOutliers, initializeTestPlots, appendToTestPlots
+from pulse.pulseOperations import extractPulseInfo, removeOutliers, initializeTestPlots, appendToTestPlots,\
+    calcP_funcForSI
 from peak.gaussFitter import gaussian
 from peak.mariscotti import peakFinder
 from quickPlots import quickHistograms, ls, quickPlotter
+from dataGetter import getTableRowData
+
+
+upperBoundAmp=float(1000)
 
 
 class pulseGroup():
@@ -26,7 +31,7 @@ class pulseGroup():
                       multiplesOfMedianStdForRejection=1000.0, # None or float, None means no rejection
                       conv_channels=1,
                       numOfExponents=2,
-                      upperBoundAmp=float(1000),
+                      upperBoundAmp=upperBoundAmp,
                       showTestPlots_Pulses=False,
                       testModeReadIn=False,
                       verbose=True):
@@ -57,6 +62,16 @@ class pulseGroup():
 
             listOfPulseDicts = readInSavedRowData(fileName, pulseDataType, listOfPulseDicts)
         self.listOfPulseDicts = listOfPulseDicts
+
+
+    def getSavedCharFunc(self,
+                         folderName,
+                         fileNamePrefix='',
+                         filenameSuffix='.csv'):
+        fileName = os.path.join(folderName, fileNamePrefix + 'charFunction' + filenameSuffix)
+        tableDict = getTableRowData(fileName)
+        self.charPulse = tableDict['charFunction']
+
 
 
     def makeOutputDict(self, pulseDataTypesToExtract):
@@ -115,21 +130,21 @@ class pulseGroup():
                 maxVal = minVal
                 minVal = junk
             newListOfPulsesDicts = []
-            for pulseDict in self.listOfPulseDicts:
+            for pulseDict in self.listOfPulseDicts[:]:
                 valueToFilter = pulseDict[pulseType]
-                if ((minVal <= valueToFilter), (valueToFilter <= maxVal)):
+                if ((minVal <= valueToFilter) and  (valueToFilter <= maxVal)):
                     newListOfPulsesDicts.append(pulseDict)
             self.listOfPulseDicts = newListOfPulsesDicts
 
 
     def calcMinLen(self):
-        deltaXlist = []
         lenList = []
         for pulseDict in self.listOfPulseDicts:
-            lenList.append(pulseDict['deltaXIndex'])
-            deltaXlist.append(pulseDict['deltaX'])
+            try:
+                lenList.append(pulseDict['deltaXIndex'])
+            except KeyError:
+                lenList.append(len(pulseDict['keptData']))
         self.minLen = numpy.min(lenList)
-        self.deltaXlist = numpy.min(deltaXlist)
 
 
     def calcCharPulse(self):
@@ -140,8 +155,18 @@ class pulseGroup():
             arrayOfAllPulses[:, pulseIndex] = pulseDict['keptData'][:self.minLen]
 
         self.charPulse = numpy.mean(arrayOfAllPulses, axis=1)
-        print self.minLen, len(self.charPulse)
 
+
+    def calcShapeIndicator(self, Pfunc):
+        minCharLen = len(Pfunc)
+        SIList = []
+        for pulseDict in self.listOfPulseDicts:
+            testArray = pulseDict['keptData']
+            minLen = numpy.min((minCharLen, len(testArray)))
+            numerator = numpy.sum(testArray[:minLen] * Pfunc[:minLen])
+            denominator = numpy.sum(testArray[:minLen])
+            pulseDict['SI'] = numerator / denominator
+            SIList.append(pulseDict['SI'])
 
 
 
@@ -174,7 +199,7 @@ def doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataT
                                               multiplesOfMedianStdForRejection=1000.0, # None or float, None means no rejection
                                               conv_channels=smoothChannels,
                                               numOfExponents=numOfExponents,
-                                              upperBoundAmp=float(1000),
+                                              upperBoundAmp=upperBoundAmp,
                                               showTestPlots_Pulses=showTestPlots_Pulses,
                                               testModeReadIn=testModeReadIn,
                                               verbose=verbose)
@@ -235,7 +260,7 @@ def makeGroupHistograms(groupDict,
                                                     bins=histBins,
                                                     keys=pulseDataForHistogram,
                                                     errFactor=1,
-                                                    plotFileName=plotFileName + 'hist',
+                                                    plotFileName=plotFileName,
                                                     savePlots=saveHistPlots,
                                                     doEps=False,
                                                     showPlots=showHistPlots,
@@ -294,10 +319,87 @@ def filterPulsesForGroups(groupDict, pulseFilterDict):
 def makeCharacteristicFunction(groupDict, characteristicFunctionFolders, outputFolder, verbose=True):
     for folderName in characteristicFunctionFolders:
         groupDict[folderName].calcCharPulse()
-        outPutFileBase = os.path.join(outputFolder, folderName)
+        outPutFileBase = os.path.join(outputFolder, folderName + "_" + 'charFunction')
         saveProcessedData(['charFunction'], [groupDict[folderName].charPulse], outPutFileBase,
-                          maxDataArraysPerFile=int('inf'), delimiter=',',
+                          maxDataArraysPerFile=int(9223372036854775807), delimiter=',',
                           saveAsColumns=False, appendMode=False, verbose=verbose)
     return groupDict
 
+
+
+def loadSavedPulseWithCharPulseData(outputFolder,
+                                    folderList,
+                                    pulseDataTypesToLoad,
+                                    characteristicFunctionFolders):
+
+    groupDict = loadSavedGroupsOfPulses(outputFolder,
+                                        folderList,
+                                        pulseDataTypesToLoad)
+    for characteristicFunctionFolder in characteristicFunctionFolders:
+        groupDict[characteristicFunctionFolder].getSavedCharFunc(outputFolder,
+                                                                 fileNamePrefix=characteristicFunctionFolder + '_',
+                                                                 filenameSuffix='.csv')
+    return groupDict
+
+
+
+def calcSI(groupDict,
+           characteristicFunctionFolders,
+           outputFolder,
+           charArrayTestPlots=False,
+           xStep=1.0e-8,
+           xTruncateAfter_s=5.0e-3,
+           useFittedFunction=True,
+           numOfExponents=2,
+           upperBoundAmp=upperBoundAmp,
+           verbose=True):
+    charArrays = []
+    for characteristicFunctionFolder in characteristicFunctionFolders:
+        charArrays.append(groupDict[characteristicFunctionFolder].charPulse)
+    Pfunc, charPulseDict1, charPulseDict2 = calcP_funcForSI(charArrays[0], charArrays[1],
+                                                            showTestPlot=charArrayTestPlots,
+                                                            xStep=xStep,
+                                                            xTruncateAfter_s=xTruncateAfter_s,
+                                                            useFittedFunction=useFittedFunction,
+                                                            numOfExponents=numOfExponents,
+                                                            upperBoundAmp=upperBoundAmp,
+                                                            verbose=verbose)
+
+    for singleFolder in groupDict.keys():
+        groupDict[singleFolder].calcShapeIndicator(Pfunc)
+        groupDict[singleFolder].makeOutputDict(["SI"])
+        outPutFileBase = os.path.join(outputFolder, singleFolder)
+        groupDict[singleFolder].saveOutputDict(outPutFileBase, ["SI"],
+                       maxDataArraysPerFile=int(9223372036854775807), delimiter=',',
+                       saveAsColumns=False, verbose=verbose)
+    return groupDict, charPulseDict1, charPulseDict2
+
+
+def makeSIhistograms(groupDict,
+                     plotFolder,
+                     histBins=10,
+                     saveHistPlots=False,
+                     showHistPlots=False,
+                     verbose=True):
+    folderList = groupDict.keys()
+    histogramDict = {}
+
+    for singleFolder in folderList:
+        groupDict[singleFolder].makeOutputDict(['SI'])
+        histogramDict[singleFolder] = groupDict[singleFolder].outputDict['SI']
+        # Histogram plotting
+    plotFileName = os.path.join(plotFolder, "SI_hists")
+    histogramDict = quickHistograms(histogramDict,
+                                    columns=2,
+                                    bins=histBins,
+                                    keys=folderList,
+                                    errFactor=1,
+                                    plotFileName=plotFileName,
+                                    savePlots=saveHistPlots,
+                                    doEps=False,
+                                    showPlots=showHistPlots,
+                                    verbose=verbose)
+
+
+    return histogramDict
 

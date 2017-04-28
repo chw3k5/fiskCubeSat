@@ -17,11 +17,14 @@ colors=['BlueViolet','Brown','CadetBlue','Chartreuse', 'Chocolate','Coral','Corn
 ls = ['solid', 'dotted', 'dashed', 'dashdot']
 lenls = len(ls)
 
+hatches = ['/', '*', '|', '\\', 'x', 'o', '-', '.', '0', '+']
+
 
 default_plotDict = {}
 
 # These can be a list or a single value
 random.shuffle(colors)
+random.shuffle(hatches)
 default_plotDict['colors'] = colors
 
 default_plotDict['fmt'] = 'o'
@@ -265,10 +268,11 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
         binWidth = (binCenters[-1] - binCenters[0]) / float(bins)
         histDict[key] = (hist, binCenters)
 
-        color = 'black'
-        hatch = ''
+
         xlabel_str = ''
         if key == 'integral':
+            for tick in axarr[row, column].xaxis.get_major_ticks():
+                tick.label.set_fontsize(6)
             xlabel_str += "Integral V * s"
             color = 'dodgerblue'
             hatch = '/'
@@ -308,6 +312,16 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
             xlabel_str += "Fitted Tau 4"
             color = 'Magenta'
             hatch = '0'
+        elif key == 'deltaX':
+            xlabel_str += "length of trimmed file (s)"
+            color = 'DarkOrange'
+            hatch = '+'
+
+        else:
+            xlabel_str = str(key)
+            color = colors[keyIndex]
+            hatch = hatches[keyIndex]
+
 
         if xlabel_str != '':
             xlabel_str += ' '

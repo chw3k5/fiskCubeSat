@@ -4,15 +4,38 @@ import getpass
 
 
 from pulse.pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOfPulses, removeOutlierPulses,\
-    makeGroupHistograms, doFindHistPeaks, filterPulsesForGroups, makeCharacteristicFunction, saveProcessedData
+    makeGroupHistograms, doFindHistPeaks, filterPulsesForGroups, makeCharacteristicFunction,\
+    loadSavedPulseWithCharPulseData, calcSI, makeSIhistograms
 
 if __name__ == '__main__':
-    preformStep1 = False
-    preformStep2 = True
-    preformStep3 = True
-    preformStep4 = True
-    preformStep5 = False # not working
-    preformStep6 = True
+    # Initial step for raw data conversion. This processed data ia then loaded in step2
+    preformStep1 = True
+
+    # Steps 3-7 require the data to be load from step 2.
+    if True:
+        preformStep2 = True # load the data
+        preformStep3 = True # remove outliers from the data sets
+        preformStep4 = True # histograms after outlier removal
+        preformStep5 = True # filter the data
+        preformStep6 = True # histograms after filter tool
+        preformStep7 = True # make the characteristic functions from the remaining data
+    else:
+        preformStep2 = False
+        preformStep3 = False
+        preformStep4 = False
+        preformStep5 = False
+        preformStep6 = False
+        preformStep7 = False
+    # After running steps 1-7 once, you can start from step 8
+    if True:
+        preformStep8 = True
+        preformStep9 = True
+    else:
+        preformStep8 = False
+        preformStep9 = False
+
+    # After running steps 1-9 once, you can start from step 10
+    preformStep10 = True
     """
     Default is True. If 'False' the code will run without text output unless something unexpected happens.
     the definition of the word verbose (adjective) is 'using or expressed in more words than are needed.'
@@ -123,6 +146,8 @@ if __name__ == '__main__':
     testModeReadIn = False
 
     if preformStep1:
+        if verbose:
+            print "Preforming Step 1: Processing raw Pulse Data."
         groupDict = doExtractAndSavePulseInfo(parentFolder,
                                               folderList,
                                               outputFolder,
@@ -151,6 +176,8 @@ if __name__ == '__main__':
     """
     pulseDataTypesToLoad = pulseDataTypesToSave
     if preformStep2:
+        if verbose:
+            print "Preforming Step 2: Loading processed pulse data."
         groupDict = loadSavedGroupsOfPulses(outputFolder,
                                             folderList,
                                             pulseDataTypesToLoad)
@@ -178,7 +205,7 @@ if __name__ == '__main__':
     if preformStep3:
         if preformStep2:
             if verbose:
-                print 'Removing outliers from the loaded pulse data. '
+                print 'Preforming step 3: Removing outliers pulses from sets of pulse data. '
             groupDict = removeOutlierPulses(groupDict, pulseDataTypesToRemoveOutliers)
         else:
             print "The data needs to be loaded in step 2 before step 3 can be completed. Try again."
@@ -234,7 +261,7 @@ if __name__ == '__main__':
     if preformStep4:
         if preformStep2:
             if verbose:
-                print 'Making histograms of the pulse data.'
+                print "Doin' step 4: Making histograms of the pulse data."
             outHistDict = makeGroupHistograms(groupDict,
                                               pulseDataForHistogram,
                                               plotFolder,
@@ -243,19 +270,7 @@ if __name__ == '__main__':
                                               showHistPlots=showHistPlots,
                                               verbose=verbose)
         else:
-            print "The data needs to be loaded in step 2 before step 3 can be completed. Try again."
-
-
-    ####################
-    ####################
-    ###### Step Under Constructions ######
-    ####################
-    ####################
-    if False:
-        # Disabled for not Not working as well enough for prime time.
-        errFactorForPeakFinder = 0
-        smoothIndexesForPeakFinder = 1
-        doFindHistPeaks(outHistDict, errFactorForPeakFinder, smoothIndexesForPeakFinder, verbose)
+            print "The data needs to be loaded in step 2 before step 4 can be completed. Try again."
 
 
 
@@ -275,12 +290,16 @@ if __name__ == '__main__':
     filterMax is a float. Separate the Tuples with a ','
     """
     pulseFilterDict = {}
-    pulseFilterDict['CHC alpha traces'] = [('integral', float(-6.0e-8), float(-3.0e-8))]
-    pulseFilterDict['CHC gamma traces'] = [('integral', float(-7.4e-8), float(-6.6e-3))]
+    pulseFilterDict['CHC alpha traces'] = [('integral', float(-1.5e-6), float(-1.2e-6))]
+    pulseFilterDict['CHC gamma traces'] = [('integral', float(-7.3e-7), float(-6.7e-7))]
 
     if preformStep5:
-        groupDict = filterPulsesForGroups(groupDict, pulseFilterDict)
-
+        if preformStep2:
+            if verbose:
+                print "Let's start Step 5: Filtering pulses."
+            groupDict = filterPulsesForGroups(groupDict, pulseFilterDict)
+        else:
+            print "The data needs to be loaded in step 2 before step 5 can be completed. Try again."
 
 
     ####################
@@ -294,7 +313,7 @@ if __name__ == '__main__':
     if preformStep6:
         if preformStep2:
             if verbose:
-                print 'Making histograms of the pulse data.'
+                print 'Step 6: Making histograms of the pulse data after filtering in step 5.'
             outHistDict = makeGroupHistograms(groupDict,
                                               pulseDataForHistogram,
                                               plotFolder,
@@ -302,7 +321,8 @@ if __name__ == '__main__':
                                               saveHistPlots=saveHistPlots,
                                               showHistPlots=showHistPlots,
                                               verbose=verbose)
-
+        else:
+            print "The data needs to be loaded in step 2 before step 6 can be completed. Try again."
 
     ####################
     ####################
@@ -313,8 +333,17 @@ if __name__ == '__main__':
     Make and characteristic function for the remaining pulses in the group.
     """
     characteristicFunctionFolders = pulseFilterDict.keys()
-    groupDict = makeCharacteristicFunction(groupDict, characteristicFunctionFolders, outputFolder, verbose=verbose)
-
+    if preformStep7:
+        if preformStep2:
+            if verbose:
+                print 'Step 6: Calculating and saving the characteristic functions used calculate The shaping indicator (SI).'
+            groupDict = makeCharacteristicFunction(groupDict,
+                                                   characteristicFunctionFolders,
+                                                   outputFolder,
+                                                   verbose=verbose)
+        else:
+            print "The data needs to be loaded in step 2 before step 7 can be completed."
+            print "Specifically you need the data type 'keptData' for this calculation."
 
     ####################
     ####################
@@ -323,10 +352,101 @@ if __name__ == '__main__':
     ####################
 
 
-    # load the characteristic functions. And test the SI on the alpha_gamma data.
+    """
+    Load Saved data and load the characteristic functions.
+    This is a break point and does not need the previous step in the all the data you need has all ready be saved.
+    This is where a fresh data read in occurs.
+    """
+    if preformStep8:
+        if verbose:
+            print "Oooo-wheeee Step 8: Load all the data back into memory (even what was previously filtered out)."
+        groupDict = loadSavedPulseWithCharPulseData(outputFolder,
+                                                    folderList,
+                                                    pulseDataTypesToLoad,
+                                                    characteristicFunctionFolders)
 
 
 
+    ####################
+    ####################
+    ###### Step 9 ######
+    ####################
+    ####################
 
 
+    """
+    And test the shaping indicator (SI) on the alpha_gamma data.
+    """
+
+
+    """
+    This toggles a test plot to look ar the two characteristic functions, there fitting (if use useFittedFunction
+    is True) that goes into making the weighting function P(t).
+     P(t) = (f1(t) - f2(t)) /  (f1(t) + f2(t))
+    """
+    charArrayTestPlots=False
+
+
+    """
+    This could totally be determined at another point in the code. For convenience (laziness) I am naming it here
+    this the time spacing of the pulse data in seconds. Last I set it it was 10 nS
+    """
+    xStep=float(1.0e-8)
+
+
+    """
+    There can be a lot more time series data than is needed data can be far more that what is needed.
+    Cut off the tail of the data for all the data past 'xTruncateAfter_s' seconds from the peak
+    """
+    xTruncateAfter_s = float(2.5e-4)
+
+
+    """
+    If True, then for the calculation of P(t), f1(t) and f2(t) will be the best fitted sum of exponential functions.
+    The number of exponentials used for fitting the sum is determined by numOfExponents.
+    """
+    useFittedFunction=True
+
+    if preformStep9:
+        if verbose:
+            print "Here are, step number 9: Calculate the Shape Indicator (SI) and save it to a file."
+        groupDict, charPulseDict1, charPulseDict2 = calcSI(groupDict,
+                                                           characteristicFunctionFolders,
+                                                           outputFolder,
+                                                           charArrayTestPlots=charArrayTestPlots,
+                                                           xStep=xStep,
+                                                           xTruncateAfter_s=xTruncateAfter_s,
+                                                           useFittedFunction=useFittedFunction,
+                                                           numOfExponents=numOfExponents,
+                                                           verbose=verbose)
+
+
+
+    #####################
+    #####################
+    ###### Step 10 ######
+    #####################
+    #####################
+    """
+    Make a histogram for the shaping index and see how well it preformed.
+    """
+
+
+    """
+    SI_histBins is the number of bin for the SI histogram
+    """
+    SI_histBins = 200
+
+    if preformStep10:
+        if verbose:
+            print 'Finally, Step 10: Making a histogram for each set of pulses showing the shaping indicator (SI)'
+        groupDict = loadSavedGroupsOfPulses(outputFolder,
+                                            folderList,
+                                            ['SI'])
+        histogramDict = makeSIhistograms(groupDict,
+                                         plotFolder,
+                                         histBins=SI_histBins,
+                                         saveHistPlots=saveHistPlots,
+                                         showHistPlots=showHistPlots,
+                                         verbose=verbose)
 
