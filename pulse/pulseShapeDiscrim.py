@@ -31,6 +31,7 @@ class pulseGroup():
                       multiplesOfMedianStdForRejection=1000.0, # None or float, None means no rejection
                       conv_channels=1,
                       numOfExponents=2,
+                      calcFitForEachPulse=False,
                       upperBoundAmp=upperBoundAmp,
                       showTestPlots_Pulses=False,
                       testModeReadIn=False,
@@ -46,6 +47,7 @@ class pulseGroup():
                                                  multiplesOfMedianStdForRejection=multiplesOfMedianStdForRejection,
                                                  conv_channels=conv_channels,
                                                  numOfExponents=numOfExponents,
+                                                 calcFitForEachPulse=calcFitForEachPulse,
                                                  upperBoundAmp=upperBoundAmp,
                                                  showTestPlots_Pulses=showTestPlots_Pulses,
                                                  testModeReadIn=testModeReadIn)
@@ -182,6 +184,7 @@ class pulseGroup():
 def doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataTypesToSave,
                               smoothChannels=1,
                               numOfExponents=2,
+                              calcFitForEachPulse=False,
                               showTestPlots_Pulses=False,
                               testModeReadIn=False,
                               verbose=True):
@@ -199,6 +202,7 @@ def doExtractAndSavePulseInfo(parentFolder, folderList, outputFolder, pulseDataT
                                               multiplesOfMedianStdForRejection=1000.0, # None or float, None means no rejection
                                               conv_channels=smoothChannels,
                                               numOfExponents=numOfExponents,
+                                              calcFitForEachPulse=calcFitForEachPulse,
                                               upperBoundAmp=upperBoundAmp,
                                               showTestPlots_Pulses=showTestPlots_Pulses,
                                               testModeReadIn=testModeReadIn,
@@ -241,12 +245,13 @@ def makeGroupHistograms(groupDict,
                         histBins=10,
                         saveHistPlots=False,
                         showHistPlots=False,
+                        plotPrefix='hist_',
                         verbose=True):
     folderList = groupDict.keys()
     outHistDict = {}
     for singleFolder in folderList:
 
-        plotFileName = os.path.join(plotFolder, "hist_" + singleFolder)
+        plotFileName = os.path.join(plotFolder, plotPrefix + singleFolder)
         groupDict[singleFolder].makeOutputDict(pulseDataForHistogram)
         if 'uniqueID' in pulseDataForHistogram:
             pulseDataForHistogram.remove('uniqueID')

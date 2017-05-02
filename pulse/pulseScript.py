@@ -1,5 +1,6 @@
 import os
 import getpass
+import sys
 
 
 
@@ -64,7 +65,10 @@ if __name__ == '__main__':
 
     """
     if getpass.getuser() == "chw3k5": # Caleb Wheeler's User name on his own computer
-        parentFolder = '/Users/chw3k5/Desktop/new CHC traces'
+        if sys.platform == 'win32':
+            parentFolder = 'C:\\Users\\chw3k5\\Documents\\pulseData\\CHC'
+        else:
+            parentFolder = '/Users/chw3k5/Desktop/new CHC traces'
     elif getpass.getuser() == "youUserName":
 
         parentFolder = 'Where\\the\\data\\is\\on\\your\\windows\\computer'
@@ -95,6 +99,14 @@ if __name__ == '__main__':
     # these can be done currently with 1, 2, 3, or 4 exponential in the sum
     """
     numOfExponents = 2
+
+
+    """
+    This toggles the fitting of a sum of exponents for each pulse. This can save time for fits
+    of that involve the sum of 3 to 4 exponential functions. It recommended to be True when
+    looking at data for the first time. 
+    """
+    calcFitForEachPulse = True
 
 
     """
@@ -154,6 +166,7 @@ if __name__ == '__main__':
                                               pulseDataTypesToSave,
                                               smoothChannels=smoothChannels,
                                               numOfExponents=numOfExponents,
+                                              calcFitForEachPulse=calcFitForEachPulse,
                                               showTestPlots_Pulses=showTestPlots_Pulses,
                                               testModeReadIn=testModeReadIn,
                                               verbose=verbose)
@@ -198,9 +211,12 @@ if __name__ == '__main__':
     see the documentation for pulseDataTypesToSave for more information on these types.
     """
     pulseDataTypesToRemoveOutliers = [('integral', float(100)), ('fittedCost', float(4)),
-                                      ('fittedAmp1', float(10)), ('fittedTau1', float(10)),
-                                      ('fittedAmp2', float(10)), ('fittedTau2', float(10)),
                                       ('deltaX', float(10))]
+    if calcFitForEachPulse:
+        for functionNumber in range(1, numOfExponents + 1):
+            pulseDataTypesToRemoveOutliers.append(('fittedAmp' + str(functionNumber), float(10)))
+            pulseDataTypesToRemoveOutliers.append(('fittedTau' + str(functionNumber), float(10)))
+
 
     if preformStep3:
         if preformStep2:
@@ -268,6 +284,7 @@ if __name__ == '__main__':
                                               histBins=histBins,
                                               saveHistPlots=saveHistPlots,
                                               showHistPlots=showHistPlots,
+                                              plotPrefix='RemoveOutliersHist_',
                                               verbose=verbose)
         else:
             print "The data needs to be loaded in step 2 before step 4 can be completed. Try again."
@@ -320,9 +337,11 @@ if __name__ == '__main__':
                                               histBins=histBins,
                                               saveHistPlots=saveHistPlots,
                                               showHistPlots=showHistPlots,
+                                              plotPrefix='FiltersHist_',
                                               verbose=verbose)
         else:
             print "The data needs to be loaded in step 2 before step 6 can be completed. Try again."
+
 
     ####################
     ####################
@@ -366,14 +385,11 @@ if __name__ == '__main__':
                                                     characteristicFunctionFolders)
 
 
-
     ####################
     ####################
     ###### Step 9 ######
     ####################
     ####################
-
-
     """
     And test the shaping indicator (SI) on the alpha_gamma data.
     """
@@ -406,7 +422,6 @@ if __name__ == '__main__':
     The number of exponentials used for fitting the sum is determined by numOfExponents.
     """
     useFittedFunction=True
-
     if preformStep9:
         if verbose:
             print "Here are, step number 9: Calculate the Shape Indicator (SI) and save it to a file."

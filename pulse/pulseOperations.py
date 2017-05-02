@@ -232,7 +232,7 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
 
 
 def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, conv_channels=1, trimBeforeMin=True,
-                  numOfExponents=1, upperBoundAmp=float('inf')):
+                  numOfExponents=1, calcFitForEachPulse=False, upperBoundAmp=float('inf')):
     arrayData = pulseDict['arrayData']
     xData = pulseDict['xData']
 
@@ -301,18 +301,18 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
     pulseDict['integral'], plotDict = calcIntegral(pulseDict['keptData'],
                                                    pulseDict['keptXData'],
                                                    plotDict)
-
-    # fit with a sum of exponential
-    fittedAmpTau, pulseDict['fittedCost'], plotDict \
-        = fittingSumOfPowers(pulseDict['keptData'], pulseDict['keptXData'], numOfExponents, plotDict, upperBoundAmp)
-    if fittedAmpTau is not None:
-        for (index, (amp, tau)) in list(enumerate(fittedAmpTau)):
-            pulseDict['fittedAmp' + str(index + 1)] = amp
-            pulseDict['fittedTau' + str(index + 1)] = tau
-    else:
-        for index in range(numOfExponents):
-            pulseDict['fittedAmp' + str(index + 1)] = None
-            pulseDict['fittedTau' + str(index + 1)] = None
+    if calcFitForEachPulse:
+        # fit with a sum of exponential
+        fittedAmpTau, pulseDict['fittedCost'], plotDict \
+            = fittingSumOfPowers(pulseDict['keptData'], pulseDict['keptXData'], numOfExponents, plotDict, upperBoundAmp)
+        if fittedAmpTau is not None:
+            for (index, (amp, tau)) in list(enumerate(fittedAmpTau)):
+                pulseDict['fittedAmp' + str(index + 1)] = amp
+                pulseDict['fittedTau' + str(index + 1)] = tau
+        else:
+            for index in range(numOfExponents):
+                pulseDict['fittedAmp' + str(index + 1)] = None
+                pulseDict['fittedTau' + str(index + 1)] = None
     return pulseDict, plotDict
 
 
@@ -457,6 +457,7 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
                      multiplesOfMedianStdForRejection=None,
                      conv_channels=1,
                      numOfExponents=1,
+                     calcFitForEachPulse=False,
                      upperBoundAmp=float('inf'),
                      showTestPlots_Pulses=False,
                      testModeReadIn=False,
@@ -517,7 +518,8 @@ def extractPulseInfo(folderName, fileNamePrefix='', filenameSuffix='',
             pulseDict, plotDict = pulsePipeline(pulseDict, plotDict,
                                                 multiplesOfMedianStdForRejection,
                                                 conv_channels, trimBeforeMin,
-                                                numOfExponents, upperBoundAmp)
+                                                numOfExponents, calcFitForEachPulse,
+                                                upperBoundAmp)
             listOfPulseDicts.append(pulseDict)
 
         if showTestPlots_Pulses:
