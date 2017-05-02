@@ -202,7 +202,8 @@ def quickPlotter(plotDict):
 
     if extractPlotVal(plotDict, 'clearAtTheEnd', keys=keys):
         plt.clf()
-        plt.close()
+        plt.close('all')
+        print "Closing all plots."
     if verbose:
         print '...the quick plotting program has finished.'
     return
@@ -252,13 +253,20 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
                     verbose=True):
     if keys is None:
         keys = list(dataDict.keys())
+    if len(keys) < 3:
+            columns = 1
     numOfSubPlots = len(keys)
     rows = int(numpy.ceil(float(numOfSubPlots)/float(columns)))
-    f, axarr = plt.subplots(rows, columns)
+    if columns == 1:
+        f, axarr = plt.subplots(rows)
+    else:
+        f, axarr = plt.subplots(rows, columns)
     f.tight_layout()
     f.set_size_inches(10, 8)
     row = -1
     histDict = {}
+
+
     for (keyIndex, key) in list(enumerate(keys)):
         column = keyIndex % columns
         if column == 0:
@@ -323,11 +331,15 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
 
         if xlabel_str != '':
             xlabel_str += ' '
-
-        axarr[row, column].set_title(xlabel_str)
-        axarr[row, column].bar(binCenters, hist, binWidth, color=color, hatch=hatch)
-        axarr[row, column].ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-    ### Save Plots ###
+        if columns == 1:
+            axarr[row].set_title(xlabel_str)
+            axarr[row].bar(binCenters, hist, binWidth, color=color, hatch=hatch)
+            axarr[row].ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        else:
+            axarr[row, column].set_title(xlabel_str)
+            axarr[row, column].bar(binCenters, hist, binWidth, color=color, hatch=hatch)
+            axarr[row, column].ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        ### Save Plots ###
     if savePlots:
         plt.draw()
         if doEps:

@@ -35,11 +35,18 @@ if __name__ == '__main__':
 
     # After running steps 1-9 once, you can start from step 10
     preformStep10 = True
+
+
     """
     Default is True. If 'False' the code will run without text output unless something unexpected happens.
     the definition of the word verbose (adjective) is 'using or expressed in more words than are needed.'
     """
     verbose = True
+
+
+
+
+
 
     ####################
     ####################
@@ -96,7 +103,7 @@ if __name__ == '__main__':
     # Amp1 * exp(- x / tau1) + Amp1 * exp(- x / tau1) + ...
     # these can be done currently with 1, 2, 3, or 4 exponential in the sum
     """
-    numOfExponents = 2
+    numOfExponents = 3
 
 
     """
@@ -104,7 +111,7 @@ if __name__ == '__main__':
     of that involve the sum of 3 to 4 exponential functions. It recommended to be True when
     looking at data for the first time. 
     """
-    calcFitForEachPulse = True
+    calcFitForEachPulse = False
 
 
     """
@@ -133,8 +140,10 @@ if __name__ == '__main__':
     'fittedTau4', only available if numOfExponents >= 4
 
     """
-    pulseDataTypesToSave = ['integral', 'fittedCost', 'rawDataFileName', 'deltaX', 'keptData']
+    pulseDataTypesToSave = ['integral', 'rawDataFileName', 'deltaX', 'keptData']
+
     if calcFitForEachPulse:
+        pulseDataTypesToSave.append('fittedCost')
         for index in range(numOfExponents):
             pulseDataTypesToSave.extend(['fittedAmp' + str(index + 1), 'fittedTau' + str(index + 1)])
     if verbose:
@@ -209,9 +218,10 @@ if __name__ == '__main__':
     'integral', 'fittedCost', 'fittedAmp1', 'fittedTau1', 'fittedAmp2' ...
     see the documentation for pulseDataTypesToSave for more information on these types.
     """
-    pulseDataTypesToRemoveOutliers = [('integral', float(100)), ('fittedCost', float(4)),
+    pulseDataTypesToRemoveOutliers = [('integral', float(100)),
                                       ('deltaX', float(10))]
     if calcFitForEachPulse:
+        pulseDataTypesToRemoveOutliers.append(('fittedCost', float(4)))
         for functionNumber in range(1, numOfExponents + 1):
             pulseDataTypesToRemoveOutliers.append(('fittedAmp' + str(functionNumber), float(10)))
             pulseDataTypesToRemoveOutliers.append(('fittedTau' + str(functionNumber), float(10)))
@@ -399,7 +409,7 @@ if __name__ == '__main__':
     is True) that goes into making the weighting function P(t).
      P(t) = (f1(t) - f2(t)) /  (f1(t) + f2(t))
     """
-    charArrayTestPlots = True
+    charArrayTestPlots = False
 
 
     """
