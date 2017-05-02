@@ -1,18 +1,16 @@
 import os
 import getpass
 import sys
-
-
-
 from pulse.pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOfPulses, removeOutlierPulses,\
     makeGroupHistograms, doFindHistPeaks, filterPulsesForGroups, makeCharacteristicFunction,\
     loadSavedPulseWithCharPulseData, calcSI, makeSIhistograms
 
+
 if __name__ == '__main__':
     # Initial step for raw data conversion. This processed data ia then loaded in step2
-    preformStep1 = False
+    preformStep1 = True
 
-    # Steps 3-7 require the data to be load from step 2.
+    # Steps 3-7 require the data to be loaded from step 2.
     if True:
         preformStep2 = True # load the data
         preformStep3 = True # remove outliers from the data sets
@@ -27,8 +25,8 @@ if __name__ == '__main__':
         preformStep5 = False
         preformStep6 = False
         preformStep7 = False
-    # After running steps 1-7 once, you can start from step 8
-    if False:
+    # After running steps 1-7 once, you can start from step 8, but step 9 needs step 8
+    if True:
         preformStep8 = True
         preformStep9 = True
     else:
@@ -36,7 +34,7 @@ if __name__ == '__main__':
         preformStep9 = False
 
     # After running steps 1-9 once, you can start from step 10
-    preformStep10 = False
+    preformStep10 = True
     """
     Default is True. If 'False' the code will run without text output unless something unexpected happens.
     the definition of the word verbose (adjective) is 'using or expressed in more words than are needed.'
@@ -98,7 +96,7 @@ if __name__ == '__main__':
     # Amp1 * exp(- x / tau1) + Amp1 * exp(- x / tau1) + ...
     # these can be done currently with 1, 2, 3, or 4 exponential in the sum
     """
-    numOfExponents = 4
+    numOfExponents = 2
 
 
     """
@@ -136,8 +134,9 @@ if __name__ == '__main__':
 
     """
     pulseDataTypesToSave = ['integral', 'fittedCost', 'rawDataFileName', 'deltaX', 'keptData']
-    for index in range(numOfExponents):
-        pulseDataTypesToSave.extend(['fittedAmp' + str(index + 1), 'fittedTau' + str(index + 1)])
+    if calcFitForEachPulse:
+        for index in range(numOfExponents):
+            pulseDataTypesToSave.extend(['fittedAmp' + str(index + 1), 'fittedTau' + str(index + 1)])
     if verbose:
         print 'The data types to save are:', pulseDataTypesToSave
 
@@ -270,9 +269,9 @@ if __name__ == '__main__':
 
 
     """
-    Specifies the number of bins for all histograms.
+    Specifies the number of bins for histograms in steps 4 and 6.
     """
-    histBins = 200
+    histBins = 100
 
     if preformStep4:
         if preformStep2:
@@ -400,14 +399,14 @@ if __name__ == '__main__':
     is True) that goes into making the weighting function P(t).
      P(t) = (f1(t) - f2(t)) /  (f1(t) + f2(t))
     """
-    charArrayTestPlots=False
+    charArrayTestPlots = True
 
 
     """
     This could totally be determined at another point in the code. For convenience (laziness) I am naming it here
     this the time spacing of the pulse data in seconds. Last I set it it was 10 nS
     """
-    xStep=float(1.0e-8)
+    xStep = float(1.0e-8)
 
 
     """

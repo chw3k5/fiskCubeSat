@@ -157,13 +157,13 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
     guessParams = []
     guessAmp = yData[0]
     if guessAmp < 0:
-        lowerBoundAmp = -upperBoundAmp
+        lowerBoundAmp = -numpy.abs(upperBoundAmp)
         upperBoundAmp = float(0)
         isPositive = False
         guessAmp = numpy.max((lowerBoundAmp, guessAmp))
     else:
         lowerBoundAmp = float(0)
-        upperBoundAmp = upperBoundAmp
+        upperBoundAmp = numpy.abs(upperBoundAmp)
         isPositive = True
         guessAmp = numpy.min((upperBoundAmp, guessAmp))
     guessTau = 1.0 / (1.0 + ((yData[-1] - yData[0]) / (xData[-1] - xData[0])))
@@ -332,14 +332,14 @@ def calcP_funcForSI(charArray1, charArray2,
         char1Len = int(numpy.round(xTruncateAfter_s / float(xStep)))
     charPulseDict1 = {'keptData':numpy.array(charArray1[:char1Len]), 'keptXData':numpy.arange(0.0, char1Len * float(xStep), xStep)}
     plotDict = appendToTestPlots(plotDict,
-                                         charPulseDict1['keptData'],
-                                         charPulseDict1['keptXData'],
-                                         legendLabel='Function 1',
-                                         fmt='None',
-                                         markersize=4,
-                                         alpha=1.0,
-                                         ls='solid',
-                                         lineWidth=1)
+                                 charPulseDict1['keptData'],
+                                 charPulseDict1['keptXData'],
+                                 legendLabel='Function 1',
+                                 fmt='None',
+                                 markersize=4,
+                                 alpha=1.0,
+                                 ls='solid',
+                                 lineWidth=1)
 
     # fit with a sum of exponential
     fittedAmpTau1, charPulseDict1['fittedCost'], junk \
@@ -360,14 +360,14 @@ def calcP_funcForSI(charArray1, charArray2,
         char2Len = int(numpy.round(xTruncateAfter_s / float(xStep)))
     charPulseDict2 = {'keptData':numpy.array(charArray2[:char2Len]), 'keptXData':numpy.arange(0.0, char2Len * float(xStep), xStep)}
     plotDict = appendToTestPlots(plotDict,
-                                         charPulseDict2['keptData'],
-                                         charPulseDict2['keptXData'],
-                                         legendLabel='Function 2',
-                                         fmt='None',
-                                         markersize=4,
-                                         alpha=1.0,
-                                         ls='solid',
-                                         lineWidth=1)
+                                 charPulseDict2['keptData'],
+                                 charPulseDict2['keptXData'],
+                                 legendLabel='Function 2',
+                                 fmt='None',
+                                 markersize=4,
+                                 alpha=1.0,
+                                 ls='solid',
+                                 lineWidth=1)
 
     # fit with a sum of exponential
     fittedAmpTau2, charPulseDict2['fittedCost'], junk \
@@ -384,37 +384,60 @@ def calcP_funcForSI(charArray1, charArray2,
 
     # replace the real-data average with a fitted function for the shaping indicator (SI) calculation
     if useFittedFunction:
-        newArray = numpy.zeros((char1Len))
+        fit1_success = True
         for sumIndex in range(numOfExponents):
-            newArray += naturalPower(charPulseDict1['keptXData'],
-                                     charPulseDict1['fittedAmp' + str(sumIndex + 1)],
-                                     charPulseDict1['fittedTau' + str(sumIndex + 1)])
-        charArray1 = newArray
-        # plotDict = appendToTestPlots(plotDict,
-        #                              charArray1,
-        #                              charPulseDict1['keptXData'],
-        #                              legendLabel='Level ' + str(numOfExponents) + ' Residuals, cost=' + str(charPulseDict1['fittedCost']),
-        #                              fmt='None',
-        #                              markersize=4,
-        #                              alpha=1.0,
-        #                              ls='dashed',
-        #                              lineWidth=1)
+            if charPulseDict1['fittedAmp' + str(sumIndex + 1)] is None:
+                fit1_success = False
+                break
+            if charPulseDict1['fittedTau' + str(sumIndex + 1)] is None:
+                fit1_success = False
+                break
 
-        newArray = numpy.zeros((char2Len))
+        if fit1_success:
+            newArray = numpy.zeros((char1Len))
+            for sumIndex in range(numOfExponents):
+                newArray += naturalPower(charPulseDict1['keptXData'],
+                                         charPulseDict1['fittedAmp' + str(sumIndex + 1)],
+                                         charPulseDict1['fittedTau' + str(sumIndex + 1)])
+            charArray1 = newArray
+        else:
+            plotDict = appendToTestPlots(plotDict,
+                                         charPulseDict1['keptData'],
+                                         charPulseDict1['keptXData'],
+                                         legendLabel='Function 1 FIT FAILED SHOWING AVERAGE PULSE',
+                                         fmt='None',
+                                         markersize=4,
+                                         alpha=1.0,
+                                         ls='dashed',
+                                         lineWidth=1)
+
+        fit2_success = True
         for sumIndex in range(numOfExponents):
-            newArray += naturalPower(charPulseDict2['keptXData'],
-                                     charPulseDict2['fittedAmp' + str(sumIndex + 1)],
-                                     charPulseDict2['fittedTau' + str(sumIndex + 1)])
-        charArray2 = newArray
-        # plotDict = appendToTestPlots(plotDict,
-        #                              charArray2,
-        #                              charPulseDict2['keptXData'],
-        #                              legendLabel='Level ' + str(numOfExponents) + ' Residuals, cost=' + str(charPulseDict2['fittedCost']),
-        #                              fmt='None',
-        #                              markersize=4,
-        #                              alpha=1.0,
-        #                              ls='dashed',
-        #                              lineWidth=1)
+            if charPulseDict2['fittedAmp' + str(sumIndex + 1)] is None:
+                fit2_success = False
+                break
+            if charPulseDict2['fittedTau' + str(sumIndex + 1)] is None:
+                fit2_success = False
+                break
+
+        if fit2_success:
+            newArray = numpy.zeros((char2Len))
+            for sumIndex in range(numOfExponents):
+                newArray += naturalPower(charPulseDict2['keptXData'],
+                                         charPulseDict2['fittedAmp' + str(sumIndex + 1)],
+                                         charPulseDict2['fittedTau' + str(sumIndex + 1)])
+            charArray2 = newArray
+        else:
+            plotDict = appendToTestPlots(plotDict,
+                                         charPulseDict2['keptData'],
+                                         charPulseDict2['keptXData'],
+                                         legendLabel='FUNCTION 2 FIT FAILED SHOWING AVERAGE PULSE',
+                                         fmt='None',
+                                         markersize=4,
+                                         alpha=1.0,
+                                         ls='dashed',
+                                         lineWidth=1)
+
 
     # Calculate the shaping indicator SI
     minCharLen = numpy.min((char1Len, char2Len))

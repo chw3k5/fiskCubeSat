@@ -182,6 +182,8 @@ def saveProcessedData(listOfHeaderNames, listOfArrays, outPutFileBase,
                 if headerIndex % modLen == 0:
                     print "File writing is " + str('%02.2f' % (headerIndex * 100.0 / float(numOfHeaders))) + " % complete."
         outputFileHandle.close()
+        if verbose:
+            print "File writing is complete for", outputFileName
     return
 
 

@@ -271,8 +271,6 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
 
         xlabel_str = ''
         if key == 'integral':
-            for tick in axarr[row, column].xaxis.get_major_ticks():
-                tick.label.set_fontsize(6)
             xlabel_str += "Integral V * s"
             color = 'dodgerblue'
             hatch = '/'
@@ -328,6 +326,7 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
 
         axarr[row, column].set_title(xlabel_str)
         axarr[row, column].bar(binCenters, hist, binWidth, color=color, hatch=hatch)
+        axarr[row, column].ticklabel_format(style='sci', axis='x', scilimits=(0,0))
     ### Save Plots ###
     if savePlots:
         plt.draw()
