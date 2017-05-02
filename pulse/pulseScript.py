@@ -8,7 +8,7 @@ from pulse.pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOf
 
 if __name__ == '__main__':
     # Initial step for raw data conversion. This processed data ia then loaded in step2
-    preformStep1 = False
+    preformStep1 = True
 
     # Steps 3-7 require the data to be loaded from step 2.
     if True:
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     # Amp1 * exp(- x / tau1) + Amp1 * exp(- x / tau1) + ...
     # these can be done currently with 1, 2, 3, or 4 exponential in the sum
     """
-    numOfExponents = 3
+    numOfExponents = 2
 
 
     """

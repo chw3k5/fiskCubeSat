@@ -309,7 +309,7 @@ def doFindHistPeaks(outHistDict, errFactor, smoothIndexesForPeakFinder,  verbose
                                              alpha=1.0,
                                              ls=ls[index % 3],
                                              lineWidth=1)
-            if plotDict['doShow']:
+            if (plotDict['doShow'] or plotDict['savePlot']):
                 quickPlotter(plotDict)
     return
 

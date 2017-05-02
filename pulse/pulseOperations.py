@@ -116,7 +116,7 @@ def calcIntegral(yData, xData, plotDict):
     dy = (midYPoints[1:] + midYPoints[:-1]) / 2.0
     integral = numpy.sum(dx * dy)
     # plot the midpoint calculation
-    if plotDict['doShow']:
+    if (plotDict['doShow'] or plotDict['savePlot']):
         plotDict = appendToTestPlots(plotDict,
                                      midYPoints,
                                      midXPoints,
@@ -205,7 +205,7 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
         sortedFittedAmpTau = sorted(fittedAmpTau, key=itemgetter(0), reverse=isPositive)
         # print "guesses", guesses
         # print "results", sortedFittedAmpTau
-        if plotDict['doShow']:
+        if (plotDict['doShow'] or plotDict['savePlot']):
             paramString = 'Fitted (amp, tau) ['
             for (amp, tau) in sortedFittedAmpTau:
                 paramString += '(' + str('%2.3f' % amp) + ', ' + str('%2.2f' % tau) + '), '
@@ -247,7 +247,7 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
 
 
     # Make x data, and send the raw data to the plot
-    if plotDict['doShow']:
+    if (plotDict['doShow'] or plotDict['savePlot']):
         plotDict = appendToTestPlots(plotDict,
                                      arrayData,
                                      xData,
@@ -261,7 +261,7 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
     if conv_channels > 1:
         smoothedData = convData(arrayData, conv_channels)
         pulseDict['smoothedData'] = smoothedData
-        if plotDict['doShow']:
+        if (plotDict['doShow'] or plotDict['savePlot']):
             plotDict = appendToTestPlots(plotDict,
                                          smoothedData,
                                          xData,
@@ -285,7 +285,7 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
         pulseDict['keptXData'] = numpy.arange(0.0, keptLen * float(xStep), xStep)
         pulseDict['deltaX'] = pulseDict['keptXData'][-1] - pulseDict['keptXData'][0]
 
-        if plotDict['doShow']:
+        if (plotDict['doShow'] or plotDict['savePlot']):
             plotDict = appendToTestPlots(plotDict,
                                          keptData,
                                          keptXData,
