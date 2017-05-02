@@ -9,7 +9,7 @@ from pulse.pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOf
 
 if __name__ == '__main__':
     # Initial step for raw data conversion. This processed data ia then loaded in step2
-    preformStep1 = True
+    preformStep1 = False
 
     # Steps 3-7 require the data to be load from step 2.
     if True:
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         preformStep6 = False
         preformStep7 = False
     # After running steps 1-7 once, you can start from step 8
-    if True:
+    if False:
         preformStep8 = True
         preformStep9 = True
     else:
@@ -35,7 +35,7 @@ if __name__ == '__main__':
         preformStep9 = False
 
     # After running steps 1-9 once, you can start from step 10
-    preformStep10 = True
+    preformStep10 = False
     """
     Default is True. If 'False' the code will run without text output unless something unexpected happens.
     the definition of the word verbose (adjective) is 'using or expressed in more words than are needed.'
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     # Amp1 * exp(- x / tau1) + Amp1 * exp(- x / tau1) + ...
     # these can be done currently with 1, 2, 3, or 4 exponential in the sum
     """
-    numOfExponents = 2
+    numOfExponents = 4
 
 
     """
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     pulseDataTypesToLoad = pulseDataTypesToSave
     if preformStep2:
         if verbose:
-            print "Preforming Step 2: Loading processed pulse data."
+            print "\nPreforming Step 2: Loading processed pulse data."
         groupDict = loadSavedGroupsOfPulses(outputFolder,
                                             folderList,
                                             pulseDataTypesToLoad)
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     if preformStep3:
         if preformStep2:
             if verbose:
-                print 'Preforming step 3: Removing outliers pulses from sets of pulse data. '
+                print '\nPreforming step 3: Removing outliers pulses from sets of pulse data. '
             groupDict = removeOutlierPulses(groupDict, pulseDataTypesToRemoveOutliers)
         else:
             print "The data needs to be loaded in step 2 before step 3 can be completed. Try again."
@@ -256,12 +256,12 @@ if __name__ == '__main__':
     """
     Specifies the number of bins for all histograms.
     """
-    histBins = 20
+    histBins = 200
 
     if preformStep4:
         if preformStep2:
             if verbose:
-                print "Doin' step 4: Making histograms of the pulse data."
+                print "\nDoin' step 4: Making histograms of the pulse data."
             outHistDict = makeGroupHistograms(groupDict,
                                               pulseDataForHistogram,
                                               plotFolder,
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     if preformStep5:
         if preformStep2:
             if verbose:
-                print "Let's start Step 5: Filtering pulses."
+                print "\nLet's start Step 5: Filtering pulses."
             groupDict = filterPulsesForGroups(groupDict, pulseFilterDict)
         else:
             print "The data needs to be loaded in step 2 before step 5 can be completed. Try again."
@@ -313,7 +313,7 @@ if __name__ == '__main__':
     if preformStep6:
         if preformStep2:
             if verbose:
-                print 'Step 6: Making histograms of the pulse data after filtering in step 5.'
+                print '\nStep 6: Making histograms of the pulse data after filtering in step 5.'
             outHistDict = makeGroupHistograms(groupDict,
                                               pulseDataForHistogram,
                                               plotFolder,
@@ -336,7 +336,7 @@ if __name__ == '__main__':
     if preformStep7:
         if preformStep2:
             if verbose:
-                print 'Step 6: Calculating and saving the characteristic functions used calculate The shaping indicator (SI).'
+                print '\nStep 7: Calculating and saving the characteristic functions used calculate The shaping indicator (SI).'
             groupDict = makeCharacteristicFunction(groupDict,
                                                    characteristicFunctionFolders,
                                                    outputFolder,
@@ -359,7 +359,7 @@ if __name__ == '__main__':
     """
     if preformStep8:
         if verbose:
-            print "Oooo-wheeee Step 8: Load all the data back into memory (even what was previously filtered out)."
+            print "\nOooo-wheeee Step 8: Load all the data back into memory (even what was previously filtered out)."
         groupDict = loadSavedPulseWithCharPulseData(outputFolder,
                                                     folderList,
                                                     pulseDataTypesToLoad,
@@ -409,7 +409,7 @@ if __name__ == '__main__':
 
     if preformStep9:
         if verbose:
-            print "Here are, step number 9: Calculate the Shape Indicator (SI) and save it to a file."
+            print "\nHere we are, step number 9: Calculate the Shape Indicator (SI) and save it to a file."
         groupDict, charPulseDict1, charPulseDict2 = calcSI(groupDict,
                                                            characteristicFunctionFolders,
                                                            outputFolder,
@@ -439,7 +439,7 @@ if __name__ == '__main__':
 
     if preformStep10:
         if verbose:
-            print 'Finally, Step 10: Making a histogram for each set of pulses showing the shaping indicator (SI)'
+            print '\nFinally, Step 10: Making a histogram for each set of pulses showing the shaping indicator (SI)'
         groupDict = loadSavedGroupsOfPulses(outputFolder,
                                             folderList,
                                             ['SI'])
