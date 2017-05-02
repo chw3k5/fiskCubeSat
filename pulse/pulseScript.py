@@ -8,7 +8,7 @@ from pulse.pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOf
 
 if __name__ == '__main__':
     # Initial step for raw data conversion. This processed data ia then loaded in step2
-    preformStep1 = True
+    preformStep1 = False
 
     # Steps 3-7 require the data to be loaded from step 2.
     if True:
@@ -405,11 +405,13 @@ if __name__ == '__main__':
 
 
     """
-    This toggles a test plot to look ar the two characteristic functions, there fitting (if use useFittedFunction
-    is True) that goes into making the weighting function P(t).
+    None disables the plot from saving, a string will be the plot's filename.
+    This toggles a test plot to look at the two characteristic functions, there fitting (if use useFittedFunction
+    is True) that goes into making the weighting function P(t). It will also notify the use is a fit fails to
+    converge, which can be more likely for many parameter fits.
      P(t) = (f1(t) - f2(t)) /  (f1(t) + f2(t))
     """
-    charArrayTestPlots = False
+    charArrayTestPlotsFilename = os.path.join(plotFolder, 'CharFunction')
 
 
     """
@@ -437,7 +439,7 @@ if __name__ == '__main__':
         groupDict, charPulseDict1, charPulseDict2 = calcSI(groupDict,
                                                            characteristicFunctionFolders,
                                                            outputFolder,
-                                                           charArrayTestPlots=charArrayTestPlots,
+                                                           charArrayTestPlotsFilename=charArrayTestPlotsFilename,
                                                            xStep=xStep,
                                                            xTruncateAfter_s=xTruncateAfter_s,
                                                            useFittedFunction=useFittedFunction,

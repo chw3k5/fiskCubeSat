@@ -56,7 +56,7 @@ default_plotDict['legendHandleLength'] = 5
 
 default_plotDict['savePlot'] = False
 default_plotDict['plotFileName'] = 'plot'
-default_plotDict['doEPS'] = True
+default_plotDict['doEPS'] = False
 default_plotDict['doShow'] = False
 default_plotDict['clearAtTheEnd'] = True
 
@@ -346,11 +346,16 @@ def quickHistograms(dataDict, columns=1, bins=10, keys=None,
             plotFileName += '.eps'
         else:
             plotFileName += '.png'
-        if verbose:print "saving file:", plotFileName
+        if verbose:
+            print "saving file:", plotFileName
         plt.savefig(plotFileName)
+
 
     if showPlots:
         plt.show()
+
+    plt.clf()
+    plt.close()
     return histDict
 
 

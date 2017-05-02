@@ -6,7 +6,7 @@ from quickPlots import quickPlotter
 from pulseReadIn import loadPulses, saveProcessedData
 
 
-def initializeTestPlots(doShow, verbose, title=None):
+def initializeTestPlots(doShow, verbose, doSave=False, plotFileName='plot', title=None):
     plotDict = {}
     plotDict['verbose'] = verbose
     # These must be a single value
@@ -21,7 +21,7 @@ def initializeTestPlots(doShow, verbose, title=None):
     plotDict['legendLoc'] = 0
     plotDict['legendNumPoints'] = 3
     plotDict['legendHandleLength'] = 5
-    plotDict['doShow'] = True
+    plotDict['doShow'] = doShow
 
     # These can be a list or a single value
     plotDict['yData'] = []
@@ -32,6 +32,10 @@ def initializeTestPlots(doShow, verbose, title=None):
     plotDict['alpha'] = []
     plotDict['ls'] = []
     plotDict['lineWidth'] = []
+
+    if doSave:
+        plotDict['savePlot'] = True
+        plotDict['plotFileName'] = plotFileName
     return plotDict
 
 
@@ -317,14 +321,22 @@ def pulsePipeline(pulseDict, plotDict, multiplesOfMedianStdForRejection=None, co
 
 
 def calcP_funcForSI(charArray1, charArray2,
-                    showTestPlot=False,
+                    charArrayTestPlotsFilename=None,
                     useFittedFunction=True,
                     xStep=1.0e-8,
                     xTruncateAfter_s=float('inf'),
                     numOfExponents=2,
                     upperBoundAmp=float('inf'),
                     verbose=True):
-    plotDict = initializeTestPlots(showTestPlot, verbose, title='Characteristic Functions')
+    if charArrayTestPlotsFilename is None:
+        savePlot = False
+    else:
+        savePlot = True
+    plotDict = initializeTestPlots(doShow=False,
+                                   verbose=verbose,
+                                   doSave=savePlot,
+                                   plotFileName=charArrayTestPlotsFilename,
+                                   title='Characteristic Functions')
     # Calculations for Characteristic Function 2
     char1Len = len(charArray1)
     dateLen1_s = char1Len * float(xStep)
@@ -451,8 +463,8 @@ def calcP_funcForSI(charArray1, charArray2,
                                      alpha=1.0,
                                      ls='dotted',
                                      lineWidth=2)
-    if showTestPlot:
-        quickPlotter(plotDict)
+
+    quickPlotter(plotDict)
 
     # calculate integrals
     charPulseDict1['integral'], junk = calcIntegral(charPulseDict1['keptData'],
