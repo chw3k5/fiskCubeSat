@@ -74,9 +74,9 @@ if __name__ == '__main__':
             parentFolder = 'C:\\Users\\chw3k5\\Documents\\pulseData\\CHC'
         else:
             parentFolder = '/Users/chw3k5/Desktop/new CHC traces'
-    elif getpass.getuser() == "youUserName":
+    elif getpass.getuser() == "joygarnett":
 
-        parentFolder = 'Where\\the\\data\\is\\on\\your\\windows\\computer'
+        parentFolder = '/Users/joygarnett/Documents/new CHC traces'
     else:
         parentFolder = ''
         print getpass.getuser(), 'is your user name.'
