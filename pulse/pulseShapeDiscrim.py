@@ -3,8 +3,8 @@ import numpy
 import os
 from matplotlib import pyplot as plt
 
-from pulse.pulseReadIn import saveProcessedData, readInSavedRowData
-from pulse.pulseOperations import extractPulseInfo, removeOutliers, initializeTestPlots, appendToTestPlots,\
+from pulseReadIn import saveProcessedData, readInSavedRowData
+from pulseOperations import extractPulseInfo, removeOutliers, initializeTestPlots, appendToTestPlots,\
     calcP_funcForSI
 from peak.gaussFitter import gaussian
 from peak.mariscotti import peakFinder

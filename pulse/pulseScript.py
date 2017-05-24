@@ -1,7 +1,7 @@
 import os
 import getpass
 import sys
-from pulse.pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOfPulses, removeOutlierPulses,\
+from pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOfPulses, removeOutlierPulses,\
     makeGroupHistograms, doFindHistPeaks, filterPulsesForGroups, makeCharacteristicFunction,\
     loadSavedPulseWithCharPulseData, calcSI, makeSIhistograms
 

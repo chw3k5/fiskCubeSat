@@ -38,7 +38,7 @@ def initializeTestPlots(doShow, verbose, doSave=False, plotFileName='plot', titl
         plotDict['plotFileName'] = plotFileName
     else:
         plotDict['savePlot'] = False
-        plotDict['plotFileName'] = '' 
+        plotDict['plotFileName'] = ''
 
     return plotDict
 
