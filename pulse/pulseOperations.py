@@ -36,6 +36,10 @@ def initializeTestPlots(doShow, verbose, doSave=False, plotFileName='plot', titl
     if doSave:
         plotDict['savePlot'] = True
         plotDict['plotFileName'] = plotFileName
+    else:
+        plotDict['savePlot'] = False
+        plotDict['plotFileName'] = '' 
+
     return plotDict
 
 

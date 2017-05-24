@@ -111,7 +111,7 @@ if __name__ == '__main__':
     of that involve the sum of 3 to 4 exponential functions. It recommended to be True when
     looking at data for the first time. 
     """
-    calcFitForEachPulse = False
+    calcFitForEachPulse = True
 
 
     """
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     This can be useful when making changes to the read in, but you do not want to wait for the time it takes to read
     in 1000's of files.
     """
-    testModeReadIn = False
+    testModeReadIn = True
 
     if preformStep1:
         if verbose:
