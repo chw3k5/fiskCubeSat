@@ -183,7 +183,7 @@ def quickPlotter(plotDict):
         legendNumPoints = extractPlotVal(plotDict, 'legendNumPoints', keys=keys)
         legendHandleLength = extractPlotVal(plotDict, 'legendHandleLength', keys=keys)
         # call the legend command
-        plt.legend(leglines,leglabels, loc=legendLoc, numpoints=legendNumPoints, handlelength=legendHandleLength)
+        plt.legend(leglines, leglabels, loc=legendLoc, numpoints=legendNumPoints, handlelength=legendHandleLength)
 
     # here the plot can be saved
     if extractPlotVal(plotDict, 'savePlot', keys=keys):
