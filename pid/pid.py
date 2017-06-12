@@ -65,8 +65,8 @@ def errorFunction(outputGoal, outputVal, outputVal_previous,
 if __name__ == "__main__":
     # set the PID constants 
     Ki = 0.0
-    Kp = 0.2
-    Kd = 0
+    Kp = 0.01
+    Kd = -0.01
     
     # set your goal output
     outputGoal = 1.0
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     externalFunction = numpy.sin(numpy.arange(0.0, 100.0, 0.01))
     
     # this is the thing you can control, like the voltage on a resistor or valve on a pipe
-    outputFromInput = numpy.arange(-2.0, 2.0, 0.001) + 1.0
+    outputFromInput = numpy.arange(-1.0, 3.0, 0.0001)
     outputFromInput_len = len(outputFromInput)
     
     # make a guess at the initial input
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     plotInternalVals = []
     plotOutputVals = []
 
-    indexesPerPlot = 100
+    indexesPerPlot = 1000
 
     legendLoc = 0
     legendNumPoints = 3
