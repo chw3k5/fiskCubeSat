@@ -1,6 +1,6 @@
 import serial
 from time import sleep
-from sys import platform
+from sys import platform, exit
 
 """
 MAC OSX instructions for installing the USB to serial Driver
@@ -19,11 +19,11 @@ Windows instructions for installing the USB to serial Driver
 """
 
 if platform == 'win32':
-    portName = 'COM3'
+    portNames = ['COM3', 'COM4']
 elif platform == 'darwin':
-    portName = '/dev/cu.usbserial'
+    portNames = ['/dev/cu.usbserial']
 else:
-    portName = ''
+    portNames = ['']
 
 isKeithley1_Open=False
 
@@ -45,9 +45,23 @@ def makeVoltageString(voltage=0.0,verbose=False):
 def openKeithley1(verbose=False):
     global keithley1
     global isKeithley1_Open
-    keithley1 = serial.Serial(port=portName, baudrate='9600', bytesize =7, stopbits =1, parity = 'O', timeout= 5)
-    keithley1.write('SYST:REM')
-    isKeithley1_Open=True
+    global portName
+    isKeithley1_Open = False
+    for portName in portNames:
+        try:
+            keithley1 = serial.Serial(port=portName, baudrate='9600', bytesize=7, stopbits=1, parity = 'O', timeout= 5)
+            keithley1.write('SYST:REM')
+            isKeithley1_Open = True
+            break
+        except:
+            pass
+    if not isKeithley1_Open:
+        print "Keithley1 failed to be connected be the serial port"
+        print "Port names tried:", portNames
+        print "Exiting program because of this failure."
+        exit()
+
+
     if verbose:
         print "The Keithley at " + portName + " is now open."
     return
@@ -118,6 +132,7 @@ if __name__ == '__main__':
     try:
         openKeithley1(verbose=verbose)
         beepKeithley()
+
         setKeithley1Voltage(voltage=5.0, verbose=verbose)
         Keithley1_Output_ON(verbose=verbose)
         sleep(sleepTime)
