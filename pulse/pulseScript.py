@@ -63,12 +63,7 @@ if __name__ == '__main__':
                   'CHC alpha_gamma traces',
                   'CHC gamma traces']
 
-    """
-    This is the location where the folders with pulse data should be stored on your computer.
-    Enter your user name and where the data is located on you computer here.
-    For a windows computer the use '\\' for a mac or unix machine use '/'.
 
-    """
     if getpass.getuser() == "chw3k5": # Caleb Wheeler's User name on his own computer
         if sys.platform == 'win32':
             parentFolder = 'C:\\Users\\chw3k5\\Documents\\pulseData\\CHC'
