@@ -3,11 +3,10 @@ This code for Chris Precod's Summer RUE project.
 This test code will need to be packaged some where else when it is completed
 
 """
-
 import os
 import getpass
-
 from matplotlib import pyplot as plt
+
 
 def isNum(testNum):
     try:
@@ -21,6 +20,7 @@ def readInData(longFileName):
     with open(longFileName) as f:
         content = f.readlines()
     return content
+
 
 def parseData(contentList, typesList, delimiter=','):
     # Remove whitespace characters and return characters like \n and \r at the end of each line
