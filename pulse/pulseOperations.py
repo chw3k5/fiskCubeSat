@@ -124,7 +124,7 @@ def calcIntegral(yData, xData, plotDict):
         plotDict = appendToTestPlots(plotDict,
                                      midYPoints,
                                      midXPoints,
-                                     legendLabel='Integral Calc = ' + str('%02.6f' % integral),
+                                     legendLabel='Integral Calc = ' + str('%.6E' % integral),
                                      fmt='x',
                                      markersize=4,
                                      alpha=1.0,
@@ -212,7 +212,7 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
         if (plotDict['doShow'] or plotDict['savePlot']):
             paramString = 'Fitted (amp, tau) ['
             for (amp, tau) in sortedFittedAmpTau:
-                paramString += '(' + str('%2.3f' % amp) + ', ' + str('%2.2f' % tau) + '), '
+                paramString += '(' + str('%.3E' % amp) + ', ' + str('%.2E' % tau) + '), '
             paramString = paramString[:-2] + ']'
 
             plotDict = appendToTestPlots(plotDict,
@@ -227,7 +227,7 @@ def fittingSumOfPowers(yData, xData, levelNum, plotDict, upperBoundAmp=float('in
             plotDict = appendToTestPlots(plotDict,
                                          residuals,
                                          xData,
-                                         legendLabel='Level ' + str(levelNum) + ' Residuals, cost=' + str(cost),
+                                         legendLabel='Level ' + str(levelNum) + ' Residuals, cost=' + str('%.6E' % cost),
                                          fmt='None',
                                          markersize=4,
                                          alpha=1.0,
