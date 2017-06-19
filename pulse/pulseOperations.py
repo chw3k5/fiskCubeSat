@@ -341,7 +341,7 @@ def calcP_funcForSI(charArray1, charArray2,
                                    doSave=savePlot,
                                    plotFileName=charArrayTestPlotsFilename,
                                    title='Characteristic Functions')
-    # Calculations for Characteristic Function 2
+    # Calculations for Characteristic Function 1
     char1Len = len(charArray1)
     dateLen1_s = char1Len * float(xStep)
     if dateLen1_s > xTruncateAfter_s:
@@ -457,7 +457,20 @@ def calcP_funcForSI(charArray1, charArray2,
 
     # Calculate the shaping indicator SI
     minCharLen = numpy.min((char1Len, char2Len))
-    Pfunc = (charArray1[:minCharLen] - charArray2[:minCharLen]) / (charArray1[:minCharLen] + charArray2[:minCharLen])
+
+    # Normalize the characteristic functions to have the maximum value equal to one
+    # (that should be first value of the array)
+    if charArray1[0] < 0.0:
+        charArray1_forPfunc = charArray1[:minCharLen] / numpy.min(charArray1[:minCharLen])
+    else:
+        charArray1_forPfunc = charArray1[:minCharLen] / numpy.max(charArray1[:minCharLen])
+    if charArray2[0] < 0.0:
+        charArray2_forPfunc = charArray2[:minCharLen] / numpy.min(charArray2[:minCharLen])
+    else:
+        charArray2_forPfunc = charArray2[:minCharLen] / numpy.max(charArray2[:minCharLen])
+
+    # The P-function calculation
+    Pfunc = (charArray1_forPfunc - charArray2_forPfunc) / (charArray1_forPfunc + charArray2_forPfunc)
     plotDict = appendToTestPlots(plotDict,
                                  Pfunc,
                                  numpy.arange(0.0, minCharLen * float(xStep), xStep),

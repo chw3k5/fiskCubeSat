@@ -8,10 +8,10 @@ from pulseShapeDiscrim import doExtractAndSavePulseInfo, loadSavedGroupsOfPulses
 
 if __name__ == '__main__':
     # Initial step for raw data conversion. This processed data ia then loaded in step2
-    preformStep1 = True
+    preformStep1 = False
 
     # Steps 3-7 require the data to be loaded from step 2.
-    if True:
+    if False:
         preformStep2 = True # load the data
         preformStep3 = True # remove outliers from the data sets
         preformStep4 = True # histograms after outlier removal
