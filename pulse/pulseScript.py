@@ -404,7 +404,9 @@ if __name__ == '__main__':
     This toggles a test plot to look at the two characteristic functions, there fitting (if use useFittedFunction
     is True) that goes into making the weighting function P(t). It will also notify the use is a fit fails to
     converge, which can be more likely for many parameter fits.
-     P(t) = (f1(t) - f2(t)) /  (f1(t) + f2(t))
+    P(t) = (f1(t) - f2(t)) /  (f1(t) + f2(t))
+    Note that f1(t) and f2(t) have been normalized so that their integrals are equal to one.
+    These functions have also been trimmed to have the same length in time, (this also the same number of points).
     """
     charArrayTestPlotsFilename = os.path.join(plotFolder, 'CharFunction')
 
@@ -426,6 +428,8 @@ if __name__ == '__main__':
     """
     If True, then for the calculation of P(t), f1(t) and f2(t) will be the best fitted sum of exponential functions.
     The number of exponentials used for fitting the sum is determined by numOfExponents.
+    Note that each pulse is normalized so the the integral equals one.
+    This occurs after it is trimmed to be the same length as the function P(t).
     """
     useFittedFunction=True
     if preformStep9:

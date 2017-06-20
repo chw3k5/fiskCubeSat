@@ -165,24 +165,13 @@ class pulseGroup():
         for pulseDict in self.listOfPulseDicts:
             testArray = pulseDict['keptData']
             minLen = numpy.min((minCharLen, len(testArray)))
-            # trim and normalize the array so the max value is 1.
-            if testArray[0] < 0.0:
-                normArray = testArray[:minLen]/(numpy.min(testArray[:minLen]))
-            else:
-                normArray = testArray[:minLen]/(numpy.max(testArray[:minLen]))
+            # trim and normalize the array so the value of the integral is unity (one)
+            normArray = testArray[:minLen] / (numpy.sum(testArray[:minLen]))
             # calculate the shaping index (SI)
             numerator = numpy.sum(normArray * Pfunc[:minLen])
             denominator = numpy.sum(normArray)
             pulseDict['SI'] = numerator / denominator
             SIList.append(pulseDict['SI'])
-
-
-
-
-
-
-
-
 
 
 

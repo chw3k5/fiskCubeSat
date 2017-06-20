@@ -458,16 +458,9 @@ def calcP_funcForSI(charArray1, charArray2,
     # Calculate the shaping indicator SI
     minCharLen = numpy.min((char1Len, char2Len))
 
-    # Normalize the characteristic functions to have the maximum value equal to one
-    # (that should be first value of the array)
-    if charArray1[0] < 0.0:
-        charArray1_forPfunc = charArray1[:minCharLen] / numpy.min(charArray1[:minCharLen])
-    else:
-        charArray1_forPfunc = charArray1[:minCharLen] / numpy.max(charArray1[:minCharLen])
-    if charArray2[0] < 0.0:
-        charArray2_forPfunc = charArray2[:minCharLen] / numpy.min(charArray2[:minCharLen])
-    else:
-        charArray2_forPfunc = charArray2[:minCharLen] / numpy.max(charArray2[:minCharLen])
+    # Normalize the characteristic functions to have the integral values to be equal to unity (one)
+    charArray1_forPfunc = charArray1[:minCharLen] / numpy.sum(charArray1[:minCharLen])
+    charArray2_forPfunc = charArray2[:minCharLen] / numpy.sum(charArray2[:minCharLen])
 
     # The P-function calculation
     Pfunc = (charArray1_forPfunc - charArray2_forPfunc) / (charArray1_forPfunc + charArray2_forPfunc)
@@ -481,6 +474,7 @@ def calcP_funcForSI(charArray1, charArray2,
                                      ls='dotted',
                                      lineWidth=2)
 
+    # plotDict['doShow'] = True
     quickPlotter(plotDict)
 
     # calculate integrals
