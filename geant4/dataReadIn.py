@@ -63,7 +63,7 @@ def parseData(contentList, flagsForData=['TIME,CH1']):
 
 if __name__ == "__main__":
     # the filenames
-    fileNames = ["T0000.CSV", "T0001.CSV", "T0002.CSV"]
+    fileNames = [""]
 
     for fileName in fileNames:
         # This can be used to store data the is specific to different users, such as data location.
