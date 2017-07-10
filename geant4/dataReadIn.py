@@ -16,54 +16,42 @@ def readInData(longFileName):
     return content
 
 
-def parseData(contentList, flagsForData=['TIME,CH1']):
-    delimiter = ','
+def parseData(contentList):
+    # Remove 'G4WT0 > ' from each line
+    contentList = [x.replace('G4WT0 >  ', '') for x in contentList]
+    contentList = [x.replace('pmt', '') for x in contentList]
+    contentList = [x.replace('Transportation', '') for x in contentList]
 
-    # Remove whitespace characters and return characters like \n and \r at the end of each line
-    contentList = [x.replace(' ', '').strip() for x in contentList]
+    # Remove whitespace characters at the beginning and return characters like \n and \r at the end of each line
+    contentList = [x.strip() for x in contentList]
 
-    # save all the header info in a dictionary
-    headerDict = {}
-    flagForData = None
-    dataStartIndex = 0
-    for (dataIndex, dataLine) in list(enumerate(contentList)):
-        if dataLine in flagsForData:
-            flagForData = dataLine
-            dataStartIndex = dataIndex + 1
-            break
-        try:
-            headerType, headerValue = dataLine.split(delimiter)
-            headerDict[headerType] = isNum(headerValue)
-        except:
-            pass
+    #split the data by white space
+    contentList = [x.split() for x in contentList]
 
-    ### save and parse the data dictionary
+    # get rid of all the extra data on the header
+    dataStartIndex = 3
+    contentList = contentList[3:]
 
-    # initialize the data dictionary.
-    dataDict = {}
-    IndexToType = {}
-    for (typeIndex, dataType) in list(enumerate(flagForData.split(delimiter))):
-        dataDict[dataType] = []
-        IndexToType[typeIndex] = dataType
+    # make the list in terms of columns from (now it is in rows) transpose
+    contentList =  [list(x) for x in zip(*contentList)]
 
-    # assign the data values to the appropriate spot in the data dictionary
-    for dataLine in contentList[dataStartIndex:]:
+    # make everything a number
+    newList = []
+    for dataColumn in contentList[:]:
+        newColumnList = []
+        for datum in dataColumn:
+            newColumnList.append(isNum(datum))
+        newList.append(newColumnList)
+    contentList = newList
 
-        listForDataLine = dataLine.split(delimiter)
-        for (datumIndex, datum) in list(enumerate(listForDataLine)):
-            if datum == '':
-                break
-            dataDict[IndexToType[datumIndex]].append(isNum(datum))
-
-
-    return headerDict, dataDict
+    return contentList
 
 
 
 
 if __name__ == "__main__":
     # the filenames
-    fileNames = [""]
+    fileNames = ['fresh.txt']#"twopmts.out"]
 
     for fileName in fileNames:
         # This can be used to store data the is specific to different users, such as data location.
@@ -79,4 +67,7 @@ if __name__ == "__main__":
         contentList = readInData(longFileName=longFileName)
 
         # parse the data into a dictionary
-        headerDict, dataDict = parseData(contentList, flagsForData=['TIME,CH1', 'TIME,CH2'])
+        dataDict = parseData(contentList)
+
+
+
