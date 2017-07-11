@@ -47,6 +47,11 @@ def parseData(contentList):
     return contentList
 
 
+def makeIntoDictionary(contentList, headerStringList):
+    dataDict = {}
+    for (columnIndex, singleColumn) in list(enumerate(contentList)):
+        dataDict[headerStringList[columnIndex]] = singleColumn
+    return dataDict
 
 
 if __name__ == "__main__":
@@ -58,6 +63,9 @@ if __name__ == "__main__":
         if getpass.getuser() == "chw3k5": # Caleb Wheeler's User name on his own computer
             # This is the location where the folders with pulse data should be stored on your computer.
             longFileName = os.path.join("/Users", "chw3k5", "Downloads", fileName)
+        elif getpass.getuser() == "chw3k5": # Caleb Wheeler's User name on his own computer
+            # This is the location where the folders with pulse data should be stored on your computer.
+            longFileName = os.path.join("/Users", "chw3k5", "Downloads", fileName)
         else:
             # write out all the directories that lead your filename, enclosed in quotes and separated by Commas
             longFileName = os.path.join("C:", "downloads", fileName)
@@ -66,8 +74,8 @@ if __name__ == "__main__":
         # read in the data
         contentList = readInData(longFileName=longFileName)
 
-        # parse the data into a dictionary
-        dataDict = parseData(contentList)
+        # parse the data into a lists for each column
+        contentList = parseData(contentList)
 
 
 
