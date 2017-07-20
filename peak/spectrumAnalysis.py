@@ -9,14 +9,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-
+from scipy.signal import argrelmax
 
 # energy calibration - convert channels/bins into keV by calibrating a known peak
 # takes: channel array, counts array, peak location in keV
 # returns: calibrated energy and counts arrays
 def calibration(channels, counts, peakEV):
-    peakCounts = float(np.argmax(counts))
-    scaleFactor = peakEV / peakCounts
+    topChans = argrelmax(counts, order=100, mode='wrap')[0]
+    peakChan = sorted(topChans, reverse = True)[0]
+    scaleFactor = peakEV / peakChan
     energy = scaleFactor * channels
     b = counts - energy
     scaledCounts = energy + b
@@ -70,30 +71,41 @@ def makePlot(f, energy, scaledCounts, guessParams, plotTitle):
     plt.text(150, 200, "FWHM = %s \nEnergy Resolution = %s%%" % (fwhm, er))
     plt.savefig('%s.png' % (plotTitle))
 
+#find multiple peaks within a mixed-source spectra
+# def findPeaks(f, energy, scaledCounts, guessParams, numPeaks)
+#     sortedCounts = sorted(scaledCounts)
+#     peaks =
 
 if __name__ == '__main__':
     # replace with filepath of raw data
-    dataFile = '/path/to/data.txt'
+    dataFile = '/Users/jmo/Documents/Data/Cs-137,Co57, Ba133, Na22,PMT900V, 10us, 10-8-00, lld 0,0_16384_t22,7deg.TKA'
 
     # read in raw data, create arrays of channels and counts
     counts = np.loadtxt(dataFile, int)
     channels = np.arange(len(counts))
 
     #replace with calibration peak location (in keV)
-    peakEV = float(keV)
+    peakEV = float(1274.53)
 
-    # calibrate raw data
+    #calibrate raw data
     energy, scaledCounts = calibration(channels, counts, peakEV)
 
-    # optional: plot raw data to estimate some guess parameters
-    # plt.plot(energy, scaledCounts)
-    # plt.show()
+    #optional: plot raw data to estimate some guess parameters
+    plt.plot(energy, scaledCounts)
+    plt.show()
 
     # replace a, b, with initial guess values for peak amplitude, standard dev.
-    guessParams = [a, peakEV, b]
-
+    # guessParams = [a, peakEV, b]
+    #
     # replace with desired plot title
-    plotTitle = 'plotTitle'
-
+    # plotTitle = 'plotTitle'
+    #
     # generate plot
-    makePlot(gaussian, energy, scaledCounts, guessParams, plotTitle)
+    # makePlot(gaussian, energy, scaledCounts, guessParams, plotTitle)
+    #
+
+    #
+    # plt.plot(channels, counts)
+    # for topChan in topChans:
+    #     plt.annotate('peak', xy = (topChan, counts[topChan]))
+    # plt.show()

@@ -163,7 +163,7 @@ def mariscotti(y, **kwargs):
     #   same variable assignment 'm' times.
     gsd = boxCar(gsd, kernalSize=m, mode='same')
 
-    kernel2 = numpy.array([ 1,4, 1])
+    kernel2 = numpy.array([1, 4, 1])
     err = numpy.convolve(vary, kernel2, 'same')
 
     #   The line below was translated form IDL code that was in a mysterious loop that seemed to make the exact

@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
 
     # Get the test data
-    testDataFile = "Am-241.csv"
+    testDataFile = "/Users/jmo/Desktop/Data/Cs137_10uCi_32cm_PMT.TKA"
     if verbose:
         print "Getting the test data in the file.", testDataFile
     testData = getTableData(testDataFile)
