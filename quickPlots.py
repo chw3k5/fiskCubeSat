@@ -248,7 +248,6 @@ def rescale(desired, current, target=None):
 
 
 def quickHistograms(dataDict, columns=1, bins=10, keys=None,
-                    errFactor=10,
                     plotFileName='hist', savePlots=False, doEps=False, showPlots=True,
                     verbose=True):
     if keys is None:
